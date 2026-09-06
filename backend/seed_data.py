@@ -1,7 +1,12 @@
 from app.core.database import SessionLocal
+
 from app.models.drift import DriftPoint
 from app.models.vessel import Vessel
 from app.models.attribution import VesselAttribution
+from app.models.origin import SpillOrigin
+
+from geoalchemy2.shape import from_shape
+from shapely.geometry import Point
 
 
 db = SessionLocal()
@@ -155,6 +160,29 @@ for attribution in attributions:
     if not existing:
         db.add(attribution)
 
+# -----------------------------
+# 4. Create probable spill origin
+# -----------------------------
+
+origin = db.query(SpillOrigin).filter(
+    SpillOrigin.spill_id == "SP-001"
+).first()
+
+if not origin:
+    origin = SpillOrigin(
+        id="ORIGIN-001",
+        spill_id="SP-001",
+        geometry=from_shape(
+            Point(76.035, 10.695),
+            srid=4326
+        ),
+        uncertainty_km=8.5,
+        method="drift_hindcast"
+    )
+
+    db.add(origin)
+
+db.commit()
 
 db.commit()
 db.close()

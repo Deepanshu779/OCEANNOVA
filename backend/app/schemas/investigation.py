@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from app.schemas.origin import OriginResponse
 
 
 class DriftPointResponse(BaseModel):
@@ -33,6 +34,8 @@ class InvestigationResponse(BaseModel):
     area_km2: float
 
     centroid: dict
+
+    origin: OriginResponse | None = None
 
     drift: list[DriftPointResponse]
 

@@ -1,3 +1,4 @@
+from app.models.origin import SpillOrigin
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -11,6 +12,7 @@ from app.schemas.investigation import (
     DriftPointResponse,
     VesselInvestigationResponse,
 )
+from app.schemas.origin import OriginResponse
 from geoalchemy2.shape import to_shape
 
 router = APIRouter(
@@ -36,6 +38,24 @@ def get_investigation(
         raise HTTPException(
             status_code=404,
             detail="Spill not found"
+        )
+
+    origin_record = (
+        db.query(SpillOrigin)
+        .filter(SpillOrigin.spill_id == spill_id)
+        .first()
+    )
+
+    origin = None
+
+    if origin_record:
+        origin_point = to_shape(origin_record.geometry)
+
+        origin = OriginResponse(
+            latitude=origin_point.y,
+            longitude=origin_point.x,
+            uncertainty_km=origin_record.uncertainty_km,
+            method=origin_record.method,
         )
 
     # Get drift points
@@ -98,6 +118,7 @@ def get_investigation(
             "lat": point.y,
             "lon": point.x
         },
+        origin=origin,
         drift=drift,
         vessels=vessels
     )
