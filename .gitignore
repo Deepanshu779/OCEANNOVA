@@ -26,3 +26,16 @@ build/
 # OS generated
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Local database files
+*.db
