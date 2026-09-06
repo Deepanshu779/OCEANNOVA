@@ -17,14 +17,21 @@ class DriftPointResponse(BaseModel):
 
 class VesselInvestigationResponse(BaseModel):
     mmsi: str
-    vessel_name: Optional[str] = None
+    vessel_name: str | None = None
+
+    latitude: float | None = None
+    longitude: float | None = None
+
+    speed_knots: float | None = None
+    course: float | None = None
 
     attribution_score: float
 
-    distance_km: Optional[float] = None
-    time_difference_hours: Optional[float] = None
-    trajectory_match_score: Optional[float] = None
-    behavioral_anomaly_score: Optional[float] = None
+    distance_km: float | None = None
+    time_difference_hours: float | None = None
+
+    trajectory_match_score: float | None = None
+    behavioral_anomaly_score: float | None = None
 
 
 class InvestigationResponse(BaseModel):

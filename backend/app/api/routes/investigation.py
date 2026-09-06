@@ -99,9 +99,18 @@ def get_investigation(
         VesselInvestigationResponse(
             mmsi=vessel.mmsi,
             vessel_name=vessel.vessel_name,
+
+            latitude=vessel.latitude,
+            longitude=vessel.longitude,
+
+            speed_knots=vessel.speed_knots,
+            course=vessel.course,
+
             attribution_score=attribution.attribution_score,
+
             distance_km=attribution.distance_km,
             time_difference_hours=attribution.time_difference_hours,
+
             trajectory_match_score=attribution.trajectory_match_score,
             behavioral_anomaly_score=attribution.behavioral_anomaly_score,
         )

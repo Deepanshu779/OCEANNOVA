@@ -111,8 +111,16 @@ drift_points = [
     ),
 ]
 
+# Remove existing mock drift points for this spill
+db.query(DriftPoint).filter(
+    DriftPoint.spill_id == "SP-001"
+).delete()
+
+# Insert fresh mock drift points
 for point in drift_points:
     db.add(point)
+
+db.commit()
 
 
 # -----------------------------
