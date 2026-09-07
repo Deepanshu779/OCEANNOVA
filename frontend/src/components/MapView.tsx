@@ -64,31 +64,49 @@ interface MapViewProps {
 
 
 /*
- * Automatically fits the map around the complete investigation.
- *
- * Includes:
- * - detected spill
- * - probable origin
- * - drift trajectory
- * - AIS vessels
+ * Keep the initial map at an India-wide maritime view.
+ * This gives the investigation proper ocean context instead of
+ * automatically zooming into a nearby city.
  */
-function FitInvestigationBounds({
+function IndiaMaritimeOverview() {
+    const map = useMap();
+
+    useEffect(() => {
+        map.fitBounds(
+            [
+                [4, 64],
+                [30, 100],
+            ],
+            {
+                padding: [20, 20],
+                animate: false,
+            }
+        );
+    }, [map]);
+
+    return null;
+}
+
+
+/*
+ * Small map control for investigators who want to jump
+ * from the India-wide overview to the active spill event.
+ */
+function FocusInvestigationButton({
     investigation,
 }: {
     investigation: Investigation;
 }) {
     const map = useMap();
 
-    useEffect(() => {
-        const points: [number, number][] = [];
+    const focusInvestigation = () => {
+        const points: [number, number][] = [
+            [
+                investigation.centroid.lat,
+                investigation.centroid.lon,
+            ],
+        ];
 
-        // Detected spill
-        points.push([
-            investigation.centroid.lat,
-            investigation.centroid.lon,
-        ]);
-
-        // Probable origin
         if (investigation.origin) {
             points.push([
                 investigation.origin.latitude,
@@ -96,7 +114,6 @@ function FitInvestigationBounds({
             ]);
         }
 
-        // Drift trajectory
         investigation.drift.forEach((point) => {
             points.push([
                 point.latitude,
@@ -104,7 +121,6 @@ function FitInvestigationBounds({
             ]);
         });
 
-        // AIS vessels
         investigation.vessels.forEach((vessel) => {
             if (
                 vessel.latitude !== null &&
@@ -119,21 +135,36 @@ function FitInvestigationBounds({
             }
         });
 
-        // Nothing to fit
-        if (points.length === 0) {
-            return;
-        }
-
-        const bounds = L.latLngBounds(points);
-
-        map.fitBounds(bounds, {
-            padding: [50, 50],
+        map.fitBounds(L.latLngBounds(points), {
+            padding: [60, 60],
             maxZoom: 10,
             animate: true,
         });
-    }, [map, investigation]);
+    };
 
-    return null;
+    return (
+        <button
+            type="button"
+            onClick={focusInvestigation}
+            style={{
+                position: "absolute",
+                top: "14px",
+                right: "14px",
+                zIndex: 1000,
+                border: "1px solid rgba(255,255,255,0.25)",
+                borderRadius: "8px",
+                background: "rgba(15, 23, 42, 0.94)",
+                color: "#ffffff",
+                padding: "9px 12px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+            }}
+        >
+            Focus Investigation
+        </button>
+    );
 }
 
 
@@ -165,8 +196,8 @@ export default function MapView({
 
     return (
         <MapContainer
-            center={spillPosition}
-            zoom={8}
+            center={[18, 80]}
+            zoom={5}
             scrollWheelZoom={true}
             style={{
                 height: "100%",
@@ -179,11 +210,30 @@ export default function MapView({
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
+            <IndiaMaritimeOverview />
 
-            {/* Automatically frame the investigation */}
-            <FitInvestigationBounds
+            <FocusInvestigationButton
                 investigation={investigation}
             />
+
+            <div
+                style={{
+                    position: "absolute",
+                    top: "14px",
+                    left: "60px",
+                    zIndex: 1000,
+                    padding: "8px 11px",
+                    borderRadius: "8px",
+                    background: "rgba(15, 23, 42, 0.90)",
+                    color: "#ffffff",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.04em",
+                    pointerEvents: "none",
+                }}
+            >
+                INDIAN MARITIME OVERVIEW
+            </div>
 
 
             {/* =========================
@@ -222,7 +272,7 @@ export default function MapView({
 
             {/* =========================
                 PROBABLE ORIGIN
-            ========================== */}
+            ========================== */
 
             {originPosition && (
                 <>
@@ -266,7 +316,7 @@ export default function MapView({
 
             {/* =========================
                 OIL DRIFT PATH
-            ========================== */}
+            ========================== */
 
             {driftPath.length > 1 && (
                 <Polyline
@@ -276,15 +326,15 @@ export default function MapView({
                     }}
                 >
                     <Popup>
-                        Predicted / reconstructed oil drift path
+                        Reconstructed / predicted oil drift path
                     </Popup>
                 </Polyline>
             )}
 
 
             {/* =========================
-                AIS VESSELS
-            ========================== */}
+                AIS VESSEL CANDIDATES
+            ========================== */
 
             {investigation.vessels.map((vessel) => {
 
@@ -312,6 +362,10 @@ export default function MapView({
                             <strong>
                                 {vessel.vessel_name ?? "Unknown Vessel"}
                             </strong>
+
+                            <br />
+
+                            AIS candidate • Demonstration data
 
                             <br />
 
