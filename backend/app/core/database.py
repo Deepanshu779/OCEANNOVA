@@ -7,19 +7,31 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DATABASE_URL_ENV = os.getenv("DATABASE_URL")
 
-if not DB_PASSWORD:
-    raise RuntimeError("DB_PASSWORD is not configured. Create backend/.env from .env.example")
+if DATABASE_URL_ENV:
+    # Render Postgres exposes a complete connection string. psycopg2 accepts
+    # the standard PostgreSQL URL directly through SQLAlchemy.
+    DATABASE_URL = DATABASE_URL_ENV.replace(
+        "postgres://", "postgresql+psycopg2://", 1
+    ).replace(
+        "postgresql://", "postgresql+psycopg2://", 1
+    )
+else:
+    DB_PASSWORD = os.getenv("DB_PASSWORD")
+    if not DB_PASSWORD:
+        raise RuntimeError(
+            "Database configuration is missing. Set DATABASE_URL or create backend/.env from .env.example"
+        )
 
-DATABASE_URL = URL.create(
-    drivername="postgresql+psycopg2",
-    username=os.getenv("DB_USER", "postgres"),
-    password=DB_PASSWORD,
-    host=os.getenv("DB_HOST", "localhost"),
-    port=int(os.getenv("DB_PORT", "5432")),
-    database=os.getenv("DB_NAME", "oceannova"),
-)
+    DATABASE_URL = URL.create(
+        drivername="postgresql+psycopg2",
+        username=os.getenv("DB_USER", "postgres"),
+        password=DB_PASSWORD,
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", "5432")),
+        database=os.getenv("DB_NAME", "oceannova"),
+    )
 
 engine = create_engine(
     DATABASE_URL,
