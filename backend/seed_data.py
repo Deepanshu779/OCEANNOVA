@@ -13,8 +13,10 @@ from app.models.origin import SpillOrigin
 from app.models.vessel_track import VesselTrackPoint
 from ais.attribution.scoring import rank_vessels
 
-# The production database starts empty. Create all ORM tables before running
-# the demo-data migration/seed statements below.
+# The production database starts empty. Enable PostGIS and create all ORM
+# tables before running the demo-data migration/seed statements below.
+with engine.begin() as connection:
+    connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
 Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
@@ -64,7 +66,6 @@ try:
             db.add(vessel)
     db.commit()
 
-    # Backward hindcast (-6/-3 h), observation (0 h), and forward forecast (+6/+12 h).
     drift_points = [
         (-6, 10.420, 74.800, 1.2, 245, 8.5, 230),
         (-3, 10.435, 74.820, 1.3, 248, 8.8, 232),
@@ -82,7 +83,6 @@ try:
         ))
     db.commit()
 
-    # Historic AIS trajectories around the reconstructed origin window.
     tracks = {
         "419001234": [
             (-6, 10.455, 74.875), (-3, 10.438, 74.850), (0, 10.421, 74.835),
@@ -109,7 +109,6 @@ try:
             ))
     db.commit()
 
-    # Explainable multi-factor AIS attribution scoring.
     candidate_inputs = [
         {
             "mmsi": "419001234", "vessel_name": "OCEAN STAR", "latitude": 10.420,
@@ -118,8 +117,8 @@ try:
             "behavioral_anomaly_score": 0.82,
         },
         {
-            "mmsi": "419005678", "vessel_name": "SEA HORIZON", "latitude": 10.450,
-            "longitude": 74.855, "origin_latitude": 10.420, "origin_longitude": 74.800,
+            "mmsi": "419005678", "vessel_name": "SEA HORIZON", "latitude": 10.450, "longitude": 74.855,
+            "origin_latitude": 10.420, "origin_longitude": 74.800,
             "time_difference_hours": 3.5, "course": 180.0, "expected_course": 250.0,
             "behavioral_anomaly_score": 0.58,
         },
