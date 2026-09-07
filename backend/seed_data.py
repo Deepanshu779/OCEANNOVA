@@ -43,12 +43,11 @@ try:
         spill.geometry = spill_geometry
     db.commit()
 
-    # Three candidate vessels + one irrelevant vessel used to demonstrate filtering.
     vessels = [
-        Vessel("419001234", "OCEAN STAR", 10.420, 74.835, 12.5, 245.0),
-        Vessel("419005678", "SEA HORIZON", 10.450, 74.855, 9.8, 180.0),
-        Vessel("419009876", "MARINE EXPRESS", 10.540, 74.910, 15.2, 270.0),
-        Vessel("419000111", "FAR HORIZON", 15.200, 80.000, 11.0, 90.0),
+        Vessel(mmsi="419001234", vessel_name="OCEAN STAR", latitude=10.420, longitude=74.835, speed_knots=12.5, course=245.0),
+        Vessel(mmsi="419005678", vessel_name="SEA HORIZON", latitude=10.450, longitude=74.855, speed_knots=9.8, course=180.0),
+        Vessel(mmsi="419009876", vessel_name="MARINE EXPRESS", latitude=10.540, longitude=74.910, speed_knots=15.2, course=270.0),
+        Vessel(mmsi="419000111", vessel_name="FAR HORIZON", latitude=15.200, longitude=80.000, speed_knots=11.0, course=90.0),
     ]
     for vessel in vessels:
         existing = db.query(Vessel).filter(Vessel.mmsi == vessel.mmsi).first()
