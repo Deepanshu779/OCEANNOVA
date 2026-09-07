@@ -122,7 +122,7 @@ The repository separates **real-data validation** from **demo integration**:
 
 ```text
 ai-model/      Segmentation validation and inference
- ais/          AIS scoring and attribution
+ais/           AIS scoring and attribution
 backend/       FastAPI + PostgreSQL/PostGIS
 frontend/      React + Leaflet dashboard
 data/          Local data policy and processing outputs
