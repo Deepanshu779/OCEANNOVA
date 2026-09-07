@@ -1,5 +1,6 @@
 from app.core.database import SessionLocal
 
+from app.models.spill import Spill
 from app.models.drift import DriftPoint
 from app.models.vessel import Vessel
 from app.models.attribution import VesselAttribution
@@ -13,31 +14,59 @@ db = SessionLocal()
 
 
 # -----------------------------
-# 1. Create sample vessels
+# 0. Create/update demo spill
 # -----------------------------
+spill = db.query(Spill).filter(
+    Spill.spill_id == "SP-001"
+).first()
 
+spill_geometry = from_shape(
+    Point(74.850, 10.450),
+    srid=4326
+)
+
+if not spill:
+    spill = Spill(
+        spill_id="SP-001",
+        confidence=0.94,
+        area_km2=14.7,
+        geometry=spill_geometry,
+    )
+    db.add(spill)
+else:
+    spill.confidence = 0.94
+    spill.area_km2 = 14.7
+    spill.geometry = spill_geometry
+
+db.commit()
+
+
+# -----------------------------
+# 1. Create/update sample vessels
+# -----------------------------
+# These are demonstration AIS candidates positioned offshore.
 vessels = [
     Vessel(
         mmsi="419001234",
         vessel_name="OCEAN STAR",
-        latitude=10.72,
-        longitude=76.08,
+        latitude=10.420,
+        longitude=74.835,
         speed_knots=12.5,
         course=245.0,
     ),
     Vessel(
         mmsi="419005678",
         vessel_name="SEA HORIZON",
-        latitude=10.65,
-        longitude=76.20,
+        latitude=10.450,
+        longitude=74.855,
         speed_knots=9.8,
         course=180.0,
     ),
     Vessel(
         mmsi="419009876",
         vessel_name="MARINE EXPRESS",
-        latitude=10.85,
-        longitude=75.95,
+        latitude=10.540,
+        longitude=74.910,
         speed_knots=15.2,
         course=270.0,
     ),
@@ -48,22 +77,28 @@ for vessel in vessels:
         Vessel.mmsi == vessel.mmsi
     ).first()
 
-    if not existing:
+    if existing:
+        existing.vessel_name = vessel.vessel_name
+        existing.latitude = vessel.latitude
+        existing.longitude = vessel.longitude
+        existing.speed_knots = vessel.speed_knots
+        existing.course = vessel.course
+    else:
         db.add(vessel)
 
 # Commit vessels before creating attribution records
 db.commit()
 
+
 # -----------------------------
 # 2. Create sample drift path
 # -----------------------------
-
 drift_points = [
     DriftPoint(
         spill_id="SP-001",
-        latitude=10.710,
-        longitude=76.050,
-        hours_from_detection=0,
+        latitude=10.420,
+        longitude=74.800,
+        hours_from_detection=-6,
         current_speed=1.2,
         current_direction=245,
         wind_speed=8.5,
@@ -71,9 +106,9 @@ drift_points = [
     ),
     DriftPoint(
         spill_id="SP-001",
-        latitude=10.725,
-        longitude=76.065,
-        hours_from_detection=6,
+        latitude=10.435,
+        longitude=74.820,
+        hours_from_detection=-3,
         current_speed=1.3,
         current_direction=248,
         wind_speed=8.8,
@@ -81,9 +116,9 @@ drift_points = [
     ),
     DriftPoint(
         spill_id="SP-001",
-        latitude=10.740,
-        longitude=76.082,
-        hours_from_detection=12,
+        latitude=10.450,
+        longitude=74.850,
+        hours_from_detection=0,
         current_speed=1.4,
         current_direction=250,
         wind_speed=9.0,
@@ -91,9 +126,9 @@ drift_points = [
     ),
     DriftPoint(
         spill_id="SP-001",
-        latitude=10.758,
-        longitude=76.100,
-        hours_from_detection=18,
+        latitude=10.465,
+        longitude=74.875,
+        hours_from_detection=6,
         current_speed=1.3,
         current_direction=252,
         wind_speed=9.2,
@@ -101,9 +136,9 @@ drift_points = [
     ),
     DriftPoint(
         spill_id="SP-001",
-        latitude=10.775,
-        longitude=76.120,
-        hours_from_detection=24,
+        latitude=10.480,
+        longitude=74.900,
+        hours_from_detection=12,
         current_speed=1.4,
         current_direction=255,
         wind_speed=9.5,
@@ -111,12 +146,11 @@ drift_points = [
     ),
 ]
 
-# Remove existing mock drift points for this spill
+# Remove existing demo drift points for this spill
 db.query(DriftPoint).filter(
     DriftPoint.spill_id == "SP-001"
 ).delete()
 
-# Insert fresh mock drift points
 for point in drift_points:
     db.add(point)
 
@@ -124,16 +158,15 @@ db.commit()
 
 
 # -----------------------------
-# 3. Create attribution scores
+# 3. Create/update attribution scores
 # -----------------------------
-
 attributions = [
     VesselAttribution(
         id="ATTR-001",
         spill_id="SP-001",
         mmsi="419001234",
         attribution_score=0.91,
-        distance_km=3.4,
+        distance_km=3.8,
         time_difference_hours=1.2,
         trajectory_match_score=0.94,
         behavioral_anomaly_score=0.82,
@@ -143,7 +176,7 @@ attributions = [
         spill_id="SP-001",
         mmsi="419005678",
         attribution_score=0.68,
-        distance_km=8.7,
+        distance_km=6.9,
         time_difference_hours=3.5,
         trajectory_match_score=0.71,
         behavioral_anomaly_score=0.58,
@@ -153,7 +186,7 @@ attributions = [
         spill_id="SP-001",
         mmsi="419009876",
         attribution_score=0.42,
-        distance_km=17.2,
+        distance_km=17.9,
         time_difference_hours=7.8,
         trajectory_match_score=0.39,
         behavioral_anomaly_score=0.31,
@@ -165,34 +198,45 @@ for attribution in attributions:
         VesselAttribution.id == attribution.id
     ).first()
 
-    if not existing:
+    if existing:
+        existing.spill_id = attribution.spill_id
+        existing.mmsi = attribution.mmsi
+        existing.attribution_score = attribution.attribution_score
+        existing.distance_km = attribution.distance_km
+        existing.time_difference_hours = attribution.time_difference_hours
+        existing.trajectory_match_score = attribution.trajectory_match_score
+        existing.behavioral_anomaly_score = attribution.behavioral_anomaly_score
+    else:
         db.add(attribution)
 
-# -----------------------------
-# 4. Create probable spill origin
-# -----------------------------
 
+# -----------------------------
+# 4. Create/update probable spill origin
+# -----------------------------
 origin = db.query(SpillOrigin).filter(
     SpillOrigin.spill_id == "SP-001"
 ).first()
 
-if not origin:
+origin_geometry = from_shape(
+    Point(74.800, 10.420),
+    srid=4326
+)
+
+if origin:
+    origin.geometry = origin_geometry
+    origin.uncertainty_km = 8.5
+    origin.method = "drift_hindcast"
+else:
     origin = SpillOrigin(
         id="ORIGIN-001",
         spill_id="SP-001",
-        geometry=from_shape(
-            Point(76.035, 10.695),
-            srid=4326
-        ),
+        geometry=origin_geometry,
         uncertainty_km=8.5,
-        method="drift_hindcast"
+        method="drift_hindcast",
     )
-
     db.add(origin)
-
-db.commit()
 
 db.commit()
 db.close()
 
-print("OCEANNOVA sample investigation data inserted successfully.")
+print("OCEANNOVA offshore India demo investigation data updated successfully.")
