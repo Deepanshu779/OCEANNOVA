@@ -1,10 +1,10 @@
 import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
   Circle,
+  MapContainer,
+  Marker,
   Polyline,
+  Popup,
+  TileLayer,
   useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -47,12 +47,17 @@ function FocusInvestigationButton({ investigation }: { investigation: Investigat
     });
     map.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 10, animate: true });
   };
+  return <button type="button" className="map-action-button" onClick={focusInvestigation}>Focus Investigation</button>;
+}
 
-  return (
-    <button type="button" className="map-action-button" onClick={focusInvestigation}>
-      Focus Investigation
-    </button>
-  );
+function FocusSelectedVessel({ vessel }: { vessel?: Vessel | null }) {
+  const map = useMap();
+  useEffect(() => {
+    if (vessel?.latitude != null && vessel.longitude != null) {
+      map.flyTo([vessel.latitude, vessel.longitude], Math.max(map.getZoom(), 9), { duration: 0.7 });
+    }
+  }, [map, vessel]);
+  return null;
 }
 
 export default function MapView({ investigation, selectedVessel }: MapViewProps) {
@@ -62,17 +67,11 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
     : null;
   const driftPath: [number, number][] = investigation.drift.map((point) => [point.latitude, point.longitude]);
 
-  useEffect(() => {
-    // selectedVessel is accepted so future map fly-to interactions can be added without changing App state shape.
-  }, [selectedVessel]);
-
   return (
     <MapContainer center={[18, 80]} zoom={5} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
-      <TileLayer
-        attribution="&copy; OpenStreetMap contributors"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <IndiaMaritimeOverview />
+      <FocusSelectedVessel vessel={selectedVessel} />
       <FocusInvestigationButton investigation={investigation} />
 
       <div className="map-overview-label">INDIAN MARITIME OVERVIEW</div>
@@ -95,11 +94,7 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
 
       {originPosition && (
         <>
-          <Circle
-            center={originPosition}
-            radius={investigation.origin!.uncertainty_km * 1000}
-            pathOptions={{ fillOpacity: 0.15 }}
-          />
+          <Circle center={originPosition} radius={investigation.origin!.uncertainty_km * 1000} pathOptions={{ fillOpacity: 0.15 }} />
           <Marker position={originPosition} icon={originIcon}>
             <Popup>
               <strong>Probable Spill Origin</strong><br />
