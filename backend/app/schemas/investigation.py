@@ -30,6 +30,13 @@ class SpillCharacterizationResponse(BaseModel):
     age_status: str
 
 
+class TrafficSummaryResponse(BaseModel):
+    total_vessels_considered: int
+    filtered_irrelevant: int
+    ranked_candidates: int
+    filtering_rule: str
+
+
 class VesselInvestigationResponse(BaseModel):
     mmsi: str
     vessel_name: str | None = None
@@ -55,5 +62,6 @@ class InvestigationResponse(BaseModel):
     characterization: SpillCharacterizationResponse
     origin: OriginResponse | None = None
     drift: list[DriftPointResponse]
+    traffic: TrafficSummaryResponse
     vessels: list[VesselInvestigationResponse]
     vessel_tracks: list[VesselTrackPointResponse]
