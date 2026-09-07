@@ -4,7 +4,7 @@ from sqlalchemy import text
 from geoalchemy2.shape import from_shape
 from shapely.geometry import Point
 
-from app.core.database import SessionLocal
+from app.core.database import Base, SessionLocal, engine
 from app.models.spill import Spill
 from app.models.drift import DriftPoint
 from app.models.vessel import Vessel
@@ -13,6 +13,9 @@ from app.models.origin import SpillOrigin
 from app.models.vessel_track import VesselTrackPoint
 from ais.attribution.scoring import rank_vessels
 
+# The production database starts empty. Create all ORM tables before running
+# the demo-data migration/seed statements below.
+Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
 
@@ -121,8 +124,8 @@ try:
             "behavioral_anomaly_score": 0.58,
         },
         {
-            "mmsi": "419009876", "vessel_name": "MARINE EXPRESS", "latitude": 10.540,
-            "longitude": 74.910, "origin_latitude": 10.420, "origin_longitude": 74.800,
+            "mmsi": "419009876", "vessel_name": "MARINE EXPRESS", "latitude": 10.540, "longitude": 74.910,
+            "origin_latitude": 10.420, "origin_longitude": 74.800,
             "time_difference_hours": 7.8, "course": 270.0, "expected_course": 250.0,
             "behavioral_anomaly_score": 0.31,
         },
