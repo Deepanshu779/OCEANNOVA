@@ -5,11 +5,13 @@ import {
     Popup,
     Circle,
     Polyline,
+    useMap,
 } from "react-leaflet";
 
 import "leaflet/dist/leaflet.css";
 
 import L from "leaflet";
+import { useEffect } from "react";
 
 import type { Investigation } from "../services/api";
 
@@ -32,6 +34,8 @@ L.Icon.Default.mergeOptions({
         "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
+
+// Vessel icon
 const vesselIcon = L.divIcon({
     className: "vessel-marker",
     html: "🚢",
@@ -39,8 +43,97 @@ const vesselIcon = L.divIcon({
     iconAnchor: [16, 16],
 });
 
+const spillIcon = L.divIcon({
+    className: "spill-marker",
+    html: `<div class="spill-marker-inner"></div>`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+});
+
+const originIcon = L.divIcon({
+    className: "origin-marker",
+    html: `<div class="origin-marker-inner"></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+});
+
+
 interface MapViewProps {
     investigation: Investigation;
+}
+
+
+/*
+ * Automatically fits the map around the complete investigation.
+ *
+ * Includes:
+ * - detected spill
+ * - probable origin
+ * - drift trajectory
+ * - AIS vessels
+ */
+function FitInvestigationBounds({
+    investigation,
+}: {
+    investigation: Investigation;
+}) {
+    const map = useMap();
+
+    useEffect(() => {
+        const points: [number, number][] = [];
+
+        // Detected spill
+        points.push([
+            investigation.centroid.lat,
+            investigation.centroid.lon,
+        ]);
+
+        // Probable origin
+        if (investigation.origin) {
+            points.push([
+                investigation.origin.latitude,
+                investigation.origin.longitude,
+            ]);
+        }
+
+        // Drift trajectory
+        investigation.drift.forEach((point) => {
+            points.push([
+                point.latitude,
+                point.longitude,
+            ]);
+        });
+
+        // AIS vessels
+        investigation.vessels.forEach((vessel) => {
+            if (
+                vessel.latitude !== null &&
+                vessel.latitude !== undefined &&
+                vessel.longitude !== null &&
+                vessel.longitude !== undefined
+            ) {
+                points.push([
+                    vessel.latitude,
+                    vessel.longitude,
+                ]);
+            }
+        });
+
+        // Nothing to fit
+        if (points.length === 0) {
+            return;
+        }
+
+        const bounds = L.latLngBounds(points);
+
+        map.fitBounds(bounds, {
+            padding: [50, 50],
+            maxZoom: 10,
+            animate: true,
+        });
+    }, [map, investigation]);
+
+    return null;
 }
 
 
@@ -87,11 +180,20 @@ export default function MapView({
             />
 
 
-            {/* =========================
-          DETECTED SPILL
-      ========================== */}
+            {/* Automatically frame the investigation */}
+            <FitInvestigationBounds
+                investigation={investigation}
+            />
 
-            <Marker position={spillPosition}>
+
+            {/* =========================
+                DETECTED SPILL
+            ========================== */}
+
+            <Marker
+                position={spillPosition}
+                icon={spillIcon}
+            >
 
                 <Popup>
 
@@ -119,8 +221,8 @@ export default function MapView({
 
 
             {/* =========================
-          PROBABLE ORIGIN
-      ========================== */}
+                PROBABLE ORIGIN
+            ========================== */}
 
             {originPosition && (
                 <>
@@ -134,7 +236,10 @@ export default function MapView({
                         }}
                     />
 
-                    <Marker position={originPosition}>
+                    <Marker
+                        position={originPosition}
+                        icon={originIcon}
+                    >
 
                         <Popup>
 
@@ -160,8 +265,8 @@ export default function MapView({
 
 
             {/* =========================
-          OIL DRIFT PATH
-      ========================== */}
+                OIL DRIFT PATH
+            ========================== */}
 
             {driftPath.length > 1 && (
                 <Polyline
@@ -178,8 +283,8 @@ export default function MapView({
 
 
             {/* =========================
-          AIS VESSELS
-      ========================== */}
+                AIS VESSELS
+            ========================== */}
 
             {investigation.vessels.map((vessel) => {
 
@@ -201,6 +306,7 @@ export default function MapView({
                         ]}
                         icon={vesselIcon}
                     >
+
                         <Popup>
 
                             <strong>
@@ -237,6 +343,7 @@ export default function MapView({
                                 : "N/A"}
 
                         </Popup>
+
                     </Marker>
                 );
             })}
@@ -244,4 +351,3 @@ export default function MapView({
         </MapContainer>
     );
 }
-

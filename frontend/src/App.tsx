@@ -125,23 +125,101 @@ function App() {
 
             <h3>Top Suspects</h3>
 
+            {investigation.vessels.slice(0, 3).map((vessel, index) => {
 
-            {investigation.vessels.map((vessel) => (
-              <div
-                className="vessel"
-                key={vessel.mmsi}
-              >
+              const score = vessel.attribution_score * 100;
 
-                <strong>
-                  {vessel.vessel_name ?? vessel.mmsi}
-                </strong>
+              return (
+                <div
+                  className={`suspect-card ${index === 0 ? "top-suspect" : ""}`}
+                  key={vessel.mmsi}
+                >
 
-                <span>
-                  {(vessel.attribution_score * 100).toFixed(0)}%
-                </span>
+                  <div className="suspect-header">
 
-              </div>
-            ))}
+                    <div>
+                      <span className="rank">
+                        #{index + 1}
+                      </span>
+
+                      <strong>
+                        {vessel.vessel_name ?? vessel.mmsi}
+                      </strong>
+                    </div>
+
+                    <strong className="suspect-score">
+                      {score.toFixed(0)}%
+                    </strong>
+
+                  </div>
+
+
+                  <div className="score-bar">
+
+                    <div
+                      className="score-fill"
+                      style={{
+                        width: `${score}%`,
+                      }}
+                    />
+
+                  </div>
+
+
+                  <div className="suspect-details">
+
+                    <div>
+                      <span>Distance</span>
+                      <strong>
+                        {vessel.distance_km !== null &&
+                          vessel.distance_km !== undefined
+                          ? `${vessel.distance_km} km`
+                          : "N/A"}
+                      </strong>
+                    </div>
+
+
+                    <div>
+                      <span>Time Δ</span>
+                      <strong>
+                        {vessel.time_difference_hours !== null &&
+                          vessel.time_difference_hours !== undefined
+                          ? `${vessel.time_difference_hours} h`
+                          : "N/A"}
+                      </strong>
+                    </div>
+
+
+                    <div>
+                      <span>Trajectory</span>
+                      <strong>
+                        {vessel.trajectory_match_score !== null &&
+                          vessel.trajectory_match_score !== undefined
+                          ? `${(
+                            vessel.trajectory_match_score * 100
+                          ).toFixed(0)}%`
+                          : "N/A"}
+                      </strong>
+                    </div>
+
+
+                    <div>
+                      <span>Behavior</span>
+                      <strong>
+                        {vessel.behavioral_anomaly_score !== null &&
+                          vessel.behavioral_anomaly_score !== undefined
+                          ? `${(
+                            vessel.behavioral_anomaly_score * 100
+                          ).toFixed(0)}%`
+                          : "N/A"}
+                      </strong>
+                    </div>
+
+                  </div>
+
+                </div>
+              );
+            })}
 
           </div>
 
@@ -158,6 +236,55 @@ function App() {
               </strong>
             </div>
 
+            <div className="section investigation-summary">
+
+              <h3>Investigation Summary</h3>
+
+              <div className="summary-step">
+                <span className="summary-number">01</span>
+                <div>
+                  <strong>Spill Detected</strong>
+                  <p>
+                    {investigation.confidence * 100 >= 90
+                      ? "High-confidence satellite detection"
+                      : "Satellite-based spill detection"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="summary-step">
+                <span className="summary-number">02</span>
+                <div>
+                  <strong>Origin Reconstructed</strong>
+                  <p>
+                    {investigation.origin
+                      ? `±${investigation.origin.uncertainty_km} km uncertainty`
+                      : "Origin unavailable"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="summary-step">
+                <span className="summary-number">03</span>
+                <div>
+                  <strong>Drift Analysed</strong>
+                  <p>
+                    {investigation.drift.length} trajectory observations
+                  </p>
+                </div>
+              </div>
+
+              <div className="summary-step">
+                <span className="summary-number">04</span>
+                <div>
+                  <strong>Vessels Ranked</strong>
+                  <p>
+                    {investigation.vessels.length} AIS candidates evaluated
+                  </p>
+                </div>
+              </div>
+
+            </div>
 
             {investigation.origin && (
               <div className="metric">
