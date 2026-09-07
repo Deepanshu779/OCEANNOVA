@@ -1,0 +1,32 @@
+name: Backend Smoke Test
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-smoke.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend-smoke.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          for path in Path("app").rglob("*.py"):
+              ast.parse(path.read_text(encoding="utf-8"))
+          print("Python syntax smoke test passed")
+          PY
