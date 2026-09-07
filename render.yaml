@@ -8,13 +8,6 @@ services:
     healthCheckPath: /api/v1/health
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: oceannova-db
-          property: connectionString
+        sync: false
       - key: FRONTEND_URL
         sync: false
-
-databases:
-  - name: oceannova-db
-    databaseName: oceannova
-    user: oceannova
