@@ -67,6 +67,12 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
     : null;
   const driftPath: [number, number][] = investigation.drift.map((point) => [point.latitude, point.longitude]);
 
+  const tracksByVessel = investigation.vessel_tracks.reduce<Record<string, [number, number][]>>((groups, point) => {
+    groups[point.mmsi] ??= [];
+    groups[point.mmsi].push([point.latitude, point.longitude]);
+    return groups;
+  }, {});
+
   return (
     <MapContainer center={[18, 80]} zoom={5} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
       <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -79,8 +85,9 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
         <div className="legend-title">MAP LEGEND</div>
         <div><span className="legend-dot legend-spill" /> Detected spill</div>
         <div><span className="legend-dot legend-origin" /> Probable origin</div>
-        <div><span className="legend-line" /> Drift path</div>
-        <div><span className="legend-ship">🚢</span> AIS candidate</div>
+        <div><span className="legend-line" /> Oil drift</div>
+        <div><span className="legend-track" /> Historic AIS track</div>
+        <div><span className="legend-ship">🚢</span> Ranked AIS candidate</div>
       </div>
 
       <Marker position={spillPosition} icon={spillIcon}>
@@ -88,7 +95,8 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
           <strong>{investigation.spill_id}</strong><br />
           Oil Spill Detected<br />
           Confidence: {(investigation.confidence * 100).toFixed(0)}%<br />
-          Area: {investigation.area_km2} km²
+          Area: {investigation.area_km2} km²<br />
+          Age estimate: {investigation.characterization.estimated_age_hours ?? "N/A"} h
         </Popup>
       </Marker>
 
@@ -107,9 +115,15 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
 
       {driftPath.length > 1 && (
         <Polyline positions={driftPath} pathOptions={{ weight: 4 }}>
-          <Popup>Reconstructed / predicted oil drift path</Popup>
+          <Popup>Backward hindcast + forward forecast drift path</Popup>
         </Polyline>
       )}
+
+      {Object.entries(tracksByVessel).map(([mmsi, points]) => (
+        <Polyline key={`track-${mmsi}`} positions={points} pathOptions={{ weight: 2, dashArray: "6 7", opacity: 0.7 }}>
+          <Popup>Historic AIS trajectory • {mmsi}</Popup>
+        </Polyline>
+      ))}
 
       {investigation.vessels.map((vessel) => {
         if (vessel.latitude == null || vessel.longitude == null) return null;
@@ -120,9 +134,10 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
               AIS candidate • Demonstration data<br />
               MMSI: {vessel.mmsi}<br />
               Attribution Score: {(vessel.attribution_score * 100).toFixed(0)}%<br />
-              Distance: {vessel.distance_km ?? "N/A"} km<br />
-              Time Difference: {vessel.time_difference_hours ?? "N/A"} hours<br />
-              Trajectory Match: {vessel.trajectory_match_score != null ? `${(vessel.trajectory_match_score * 100).toFixed(0)}%` : "N/A"}
+              Proximity: {vessel.proximity_score != null ? `${(vessel.proximity_score * 100).toFixed(0)}%` : "N/A"}<br />
+              Temporal: {vessel.temporal_score != null ? `${(vessel.temporal_score * 100).toFixed(0)}%` : "N/A"}<br />
+              Trajectory Match: {vessel.trajectory_match_score != null ? `${(vessel.trajectory_match_score * 100).toFixed(0)}%` : "N/A"}<br />
+              Behaviour: {vessel.behavioral_anomaly_score != null ? `${(vessel.behavioral_anomaly_score * 100).toFixed(0)}%` : "N/A"}
             </Popup>
           </Marker>
         );
