@@ -1,47 +1,100 @@
-# OCEANNOVA Demo Guide
+# OCEANNOVA Final Demo Guide
 
-## Local startup
+## 1. Start the final demo
 
-### 1. Pull latest code
+Pull the latest `main` first:
 
 ```powershell
 cd D:\OCEANNOVA
 git pull origin main
 ```
 
-### 2. Seed PostgreSQL/PostGIS demonstration data
+Seed/update the PostgreSQL + PostGIS demo case:
 
 ```powershell
 cd backend
 python seed_data.py
 ```
 
-### 3. Start FastAPI
+Start FastAPI:
 
 ```powershell
-cd backend
 python -m uvicorn app.main:app --reload
 ```
 
-API: `http://127.0.0.1:8000`
-
-### 4. Start the React dashboard
+In a second terminal:
 
 ```powershell
-cd frontend
+cd D:\OCEANNOVA\frontend
 npm install
 npm run dev
 ```
 
-Dashboard: `http://localhost:5173`
+Open the Vite URL shown by the terminal.
 
-## Recommended presentation flow
+## 2. Exact jury/demo story
 
-1. Open the India-wide maritime overview.
-2. Introduce SP-001 as the detected spill event.
-3. Click **Focus Investigation** to move from regional context to event detail.
-4. Explain the red spill marker, orange probable origin, blue uncertainty region, drift path, and vessel candidates.
-5. Open the top vessel candidate and show the attribution evidence fields.
-6. Emphasize that the attribution score is an explainable investigation score, not proof of legal responsibility.
-7. Mention the real Sentinel-1A validation sample and the SAR baseline benchmark.
-8. Explain that live AIS/ocean/weather ingestion and a production deep-learning model are the next integration phase.
+### Step 1 — Detect
+
+Show **SP-001** on the India-wide maritime overview.
+
+Say:
+
+> “OCEANNOVA starts from a satellite-derived oil-spill candidate and characterises the event using confidence, area, perimeter, compactness and observation-age metadata.”
+
+### Step 2 — Trace
+
+Click **Focus Investigation**.
+
+Point out:
+
+- 🔴 detected spill
+- 🟠 probable origin
+- 🔵 origin uncertainty region
+- solid line = oil drift path
+
+Say:
+
+> “We use ocean-current and wind-driven drift information to reconstruct the slick backward toward a probable origin and project its forward movement. Because drift is uncertain, we show an origin region instead of claiming a precise point.”
+
+### Step 3 — AIS reconstruction
+
+Point to the dashed lines.
+
+Say:
+
+> “Around the reconstructed origin window, we reconstruct historic vessel trajectories. Traffic that is spatially or temporally irrelevant is filtered before attribution.”
+
+The seeded demo contains **4 vessels**, of which **1 is deliberately irrelevant** and **3 are ranked candidates**.
+
+### Step 4 — Attribution
+
+Click the top suspect card.
+
+Explain the evidence:
+
+- proximity
+- temporal consistency
+- trajectory alignment
+- behavioural anomaly
+- final explainable attribution score
+
+Say:
+
+> “The score is decision support. It ranks vessels by consistency with the available evidence; it does not prove that a vessel legally caused the spill.”
+
+### Step 5 — Real satellite evidence
+
+Briefly mention that the repository contains a real Sentinel-1A sample validation workflow and a classical SAR dark-region baseline. Do not call the classical baseline the final AI model.
+
+### Step 6 — Close with the value proposition
+
+> “Detect the slick, reconstruct where and when it likely originated, predict where it will move, reconstruct the relevant vessel traffic, and rank the strongest investigative leads in one geospatial console.”
+
+## 3. If a judge asks what is real vs demo
+
+**Real-data validation:** Sentinel-1A raster ingestion, CRS handling, paired ground-truth analysis and SAR baseline benchmarking.
+
+**Demonstration integration:** seeded offshore incident, AIS vessel identities/trajectories and the displayed attribution scenario.
+
+**Production next phase:** live AIS feeds, live ocean/weather feeds and a trained deep-learning segmentation model.
