@@ -56,17 +56,24 @@ button { font: inherit; }
 .loading-screen strong { font-size: 16px; }
 .loading-screen span { color: #8291a8; font-size: 12px; }
 .vessel-marker { background: transparent; border: none; font-size: 28px; line-height: 32px; text-align: center; }
+.selected-vessel-marker { background: transparent; border: none; }
+.selected-vessel-inner { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: rgba(245,158,11,.18); border: 2px solid #f59e0b; box-shadow: 0 0 0 5px rgba(245,158,11,.10); font-size: 24px; }
 .spill-marker, .origin-marker { background: transparent; border: none; }
 .spill-marker-inner { width: 22px; height: 22px; border-radius: 50%; background: #e53935; border: 4px solid white; box-shadow: 0 0 0 4px rgba(229,57,53,.25); }
 .origin-marker-inner { width: 20px; height: 20px; border-radius: 50%; background: #ff9800; border: 4px solid white; box-shadow: 0 0 0 4px rgba(255,152,0,.25); }
 .map-action-button { position: absolute; top: 14px; right: 14px; z-index: 1000; border: 1px solid rgba(255,255,255,.25); border-radius: 8px; background: rgba(15,23,42,.94); color: #fff; padding: 9px 12px; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
 .map-action-button:hover { background: rgba(30,41,59,.98); }
 .map-overview-label { position: absolute; top: 14px; left: 60px; z-index: 1000; padding: 8px 11px; border-radius: 8px; background: rgba(15,23,42,.90); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .04em; pointer-events: none; }
-.map-legend { position: absolute; bottom: 18px; left: 18px; z-index: 1000; min-width: 185px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(15,23,42,.92); color: #e2e8f0; font-size: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.24); }
+.map-hero-card { position: absolute; top: 58px; left: 18px; z-index: 1000; display: grid; gap: 3px; max-width: 285px; padding: 12px 14px; border: 1px solid rgba(125,211,252,.18); border-radius: 10px; background: rgba(8,17,31,.88); color: white; box-shadow: 0 8px 24px rgba(0,0,0,.20); pointer-events: none; backdrop-filter: blur(8px); }
+.map-hero-kicker { color: #7dd3fc; font-size: 8px; font-weight: 900; letter-spacing: .16em; }
+.map-hero-card strong { font-size: 12px; }
+.map-hero-card span { color: #91a0b6; font-size: 9px; }
+.map-legend { position: absolute; bottom: 18px; left: 18px; z-index: 1000; min-width: 205px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(15,23,42,.92); color: #e2e8f0; font-size: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.24); }
 .map-legend > div { display: flex; align-items: center; gap: 7px; margin-top: 7px; }
 .map-legend .legend-title { margin-top: 0; font-size: 9px; color: #94a3b8; letter-spacing: .12em; font-weight: 800; }
 .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .legend-spill { background: #e53935; }
+.legend-footprint { width: 14px; height: 10px; border-radius: 3px; display: inline-block; background: rgba(239,68,68,.35); border: 2px solid #ef4444; }
 .legend-origin { background: #ff9800; }
 .legend-line { width: 14px; height: 3px; border-radius: 4px; background: #3388ff; display: inline-block; }
 .legend-track { width: 14px; height: 0; border-top: 2px dashed #64748b; display: inline-block; }
@@ -74,7 +81,6 @@ button { font: inherit; }
 .map-status-card { position: absolute; bottom: 18px; right: 18px; z-index: 1000; display: grid; gap: 3px; padding: 11px 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 9px; background: rgba(15,23,42,.90); color: white; box-shadow: 0 8px 24px rgba(0,0,0,.20); }
 .map-status-card strong { font-size: 11px; }
 .map-status-card span { font-size: 9px; color: #91a0b6; letter-spacing: .08em; }
-
 .evidence-panel { margin-top: 18px; padding: 14px; border: 1px solid rgba(125, 211, 252, .16); border-radius: 12px; background: linear-gradient(180deg, rgba(20, 35, 55, .92), rgba(14, 25, 42, .92)); }
 .evidence-panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
 .evidence-panel-header h3 { margin: 3px 0 0; font-size: 13px; }
@@ -87,4 +93,5 @@ button { font: inherit; }
 .evidence-tag.real { color: #7dd3fc; background: rgba(14, 165, 233, .10); border: 1px solid rgba(14, 165, 233, .18); }
 .evidence-tag.demo { color: #fbbf24; background: rgba(245, 158, 11, .08); border: 1px solid rgba(245, 158, 11, .16); }
 .top-suspect-explanation { margin: 0 0 11px; padding: 8px 9px; border-left: 2px solid #f59e0b; background: rgba(245, 158, 11, .055); color: #aebbd0; font-size: 9px; line-height: 1.45; }
-@media (max-width: 900px) { .sidebar { width: 310px; } .topbar-meta { display: none; } }
+.drift-end-marker { background: transparent; border: none; color: #60a5fa; font-size: 22px; font-weight: 900; text-shadow: 0 1px 4px rgba(0,0,0,.55); }
+@media (max-width: 900px) { .sidebar { width: 310px; } .topbar-meta { display: none; } .map-hero-card { max-width: 230px; } }
