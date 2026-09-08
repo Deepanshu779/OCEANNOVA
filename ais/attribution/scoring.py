@@ -17,8 +17,8 @@ def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return 2 * earth_radius_km * atan2(sqrt(a), sqrt(max(0.0, 1 - a)))
 
 
-def proximity_score(distance_km: float, scale_km: float = 20.0) -> float:
-    """Convert distance to a 0..1 evidence score."""
+def proximity_score(distance_km: float, scale_km: float = 50.0) -> float:
+    """Convert distance to a 0..1 evidence score over the 50 km investigation radius."""
     return max(0.0, min(1.0, 1.0 - distance_km / scale_km))
 
 
@@ -68,7 +68,7 @@ def rank_vessels(candidates: list[dict]) -> list[dict]:
         if distance > candidate.get("max_distance_km", 50.0):
             continue
 
-        proximity = proximity_score(distance, candidate.get("proximity_scale_km", 20.0))
+        proximity = proximity_score(distance, candidate.get("proximity_scale_km", 50.0))
         temporal = temporal_score(candidate["time_difference_hours"])
         trajectory = trajectory_match_score(candidate["course"], candidate["expected_course"])
         behavior = max(0.0, min(1.0, candidate["behavioral_anomaly_score"]))

@@ -82,7 +82,7 @@ def get_investigation(spill_id: str, db: Session = Depends(get_db)):
             distance_km=attribution.distance_km,
             time_difference_hours=attribution.time_difference_hours,
             proximity_score=(
-                max(0.0, min(1.0, 1.0 - attribution.distance_km / 20.0))
+                max(0.0, min(1.0, 1.0 - attribution.distance_km / 50.0))
                 if attribution.distance_km is not None else None
             ),
             temporal_score=(
@@ -91,7 +91,13 @@ def get_investigation(spill_id: str, db: Session = Depends(get_db)):
             ),
             trajectory_match_score=attribution.trajectory_match_score,
             behavioral_anomaly_score=attribution.behavioral_anomaly_score,
-            relevance="candidate",
+            relevance=(
+                "high"
+                if attribution.attribution_score >= 0.70
+                else "medium"
+                if attribution.attribution_score >= 0.45
+                else "low"
+            ),
         )
         for attribution, vessel in vessel_rows
     ]
@@ -139,7 +145,7 @@ def get_investigation(spill_id: str, db: Session = Depends(get_db)):
         total_vessels_considered=total_vessels,
         filtered_irrelevant=filtered_irrelevant,
         ranked_candidates=ranked_candidates,
-        filtering_rule="origin-window proximity + temporal consistency + available AIS evidence",
+        filtering_rule="50 km origin-window proximity + temporal consistency + available AIS evidence",
     )
 
     return InvestigationResponse(
