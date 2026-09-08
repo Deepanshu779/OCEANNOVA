@@ -16,7 +16,7 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
       </div>
 
       <div className="spill-card">
-        <div className="label">DETECTED SPILL</div>
+        <div className="label">AI-VALIDATED SPILL</div>
         <h3>{investigation.spill_id}</h3>
         <div className="metric"><span>Confidence</span><strong>{(investigation.confidence * 100).toFixed(0)}%</strong></div>
         <div className="metric"><span>Area</span><strong>{investigation.area_km2} km²</strong></div>
@@ -51,7 +51,7 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
       </div>
 
       <div className="section">
-        <div className="section-heading"><h3>Traffic Filter</h3><span>Historic AIS</span></div>
+        <div className="section-heading"><h3>AIS Evidence</h3><span>Representative tracks</span></div>
         <div className="metric"><span>Total vessels</span><strong>{investigation.traffic.total_vessels_considered}</strong></div>
         <div className="metric"><span>Filtered irrelevant</span><strong>{investigation.traffic.filtered_irrelevant}</strong></div>
         <div className="metric"><span>Ranked candidates</span><strong>{investigation.traffic.ranked_candidates}</strong></div>
@@ -62,19 +62,20 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
         <div className="section-heading"><h3>Drift Analysis</h3><span>{investigation.drift.length} points</span></div>
         <div className="metric"><span>Origin method</span><strong>{investigation.origin?.method ?? "Unavailable"}</strong></div>
         <div className="metric"><span>Coverage</span><strong>{investigation.drift.some((p) => p.hours_from_detection < 0) ? "Backward + " : ""}{investigation.drift.some((p) => p.hours_from_detection > 0) ? "Forward" : "Observation"}</strong></div>
+        <p className="micro-copy">Environmental inputs are prototype demonstration values for this case.</p>
       </div>
 
       <div className="section investigation-summary">
         <div className="section-heading"><h3>Investigation Summary</h3><span>Pipeline</span></div>
-        <div className="summary-step"><span className="summary-number">01</span><div><strong>Detect + Characterize</strong><p>SAR candidate, geometry and age estimate</p></div></div>
+        <div className="summary-step"><span className="summary-number">01</span><div><strong>Detect + Characterize</strong><p>Sentinel-1 SAR + U-Net + radiometric validation</p></div></div>
         <div className="summary-step"><span className="summary-number">02</span><div><strong>Reconstruct Origin</strong><p>{investigation.origin ? `±${investigation.origin.uncertainty_km} km uncertainty` : "Not available"}</p></div></div>
         <div className="summary-step"><span className="summary-number">03</span><div><strong>Hindcast + Forecast</strong><p>{investigation.drift.length} timestamped drift points</p></div></div>
         <div className="summary-step"><span className="summary-number">04</span><div><strong>Filter + Rank AIS</strong><p>{investigation.traffic.ranked_candidates} candidates from {investigation.traffic.total_vessels_considered} vessels</p></div></div>
       </div>
 
       <div className="disclaimer-card">
-        <strong>Investigation score</strong>
-        <p>Ranking is decision support based on available evidence. It is not proof of legal responsibility.</p>
+        <strong>Evidence boundary</strong>
+        <p>Satellite detection is evaluated on a real test scene. Environmental inputs and AIS tracks are representative demo data. Attribution is decision support, not proof of legal responsibility.</p>
       </div>
     </aside>
   );
