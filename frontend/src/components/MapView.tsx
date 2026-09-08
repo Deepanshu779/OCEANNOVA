@@ -1,5 +1,6 @@
 import {
   Circle,
+  GeoJSON,
   MapContainer,
   Marker,
   Polyline,
@@ -7,9 +8,11 @@ import {
   TileLayer,
   useMap,
 } from "react-leaflet";
+
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { GeoJsonObject } from "geojson";
 import type { Investigation, Vessel } from "../services/api";
 
 interface MapViewProps {
@@ -69,6 +72,21 @@ function FocusSelectedVessel({ vessel }: { vessel?: Vessel | null }) {
 }
 
 export default function MapView({ investigation, selectedVessel }: MapViewProps) {
+  const [spillGeoJson, setSpillGeoJson] = useState<GeoJsonObject | null>(null);
+
+  useEffect(() => {
+    fetch("/data/SP-001_spill.geojson")
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load AI spill footprint");
+        }
+        return response.json();
+      })
+      .then((data) => setSpillGeoJson(data))
+      .catch((error) => {
+        console.error("AI spill footprint:", error);
+      });
+  }, []);
   const spillPosition: [number, number] = [investigation.centroid.lat, investigation.centroid.lon];
   const originPosition: [number, number] | null = investigation.origin
     ? [investigation.origin.latitude, investigation.origin.longitude]
@@ -87,13 +105,39 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
       <IncidentOverview investigation={investigation} />
       <FocusSelectedVessel vessel={selectedVessel} />
       <FocusInvestigationButton investigation={investigation} />
+      {spillGeoJson && (
+        <GeoJSON
+          data={spillGeoJson}
+          style={{
+            weight: 2,
+            fillOpacity: 0.35,
+          }}
+        >
+          <Popup>
+            <strong>AI-Detected Spill Footprint</strong>
+            <br />
+            Source: Sentinel-1 SAR
+            <br />
+            Method: U-Net + radiometric validation
+            <br />
+            Area: {investigation.area_km2} km²
+            <br />
+            Mean AI confidence:{" "}
+            {(investigation.confidence * 100).toFixed(1)}%
+          </Popup>
+        </GeoJSON>
+      )}
 
-      <div className="map-overview-label">GULF OF MEXICO • SENTINEL-1 TEST SCENE</div>
+      <div className="map-overview-label">
+        GULF OF MEXICO • REAL SENTINEL-1 TEST SCENE
+      </div>
       <div className="map-legend">
         <div className="legend-title">MAP LEGEND</div>
-        <div><span className="legend-dot legend-spill" /> Detected spill</div>
+        <div>
+          <span className="legend-dot legend-spill" /> AI-detected spill footprint
+        </div>
         <div><span className="legend-dot legend-origin" /> Probable origin</div>
-        <div><span className="legend-line" /> Oil drift</div>
+        <div><span className="legend-line" /> Prototype oil drift</div>
         <div><span className="legend-track" /> Representative AIS track</div>
         <div><span className="legend-ship">🚢</span> Ranked AIS candidate</div>
       </div>
