@@ -22,8 +22,22 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
         <div className="metric"><span>Area</span><strong>{investigation.area_km2} km²</strong></div>
         <div className="metric"><span>Perimeter</span><strong>{investigation.characterization.perimeter_estimate_km ?? "N/A"} km</strong></div>
         <div className="metric"><span>Compactness</span><strong>{investigation.characterization.compactness_estimate ?? "N/A"}</strong></div>
-        <div className="metric"><span>Age estimate</span><strong>{investigation.characterization.estimated_age_hours ?? "N/A"} h</strong></div>
+        <div className="metric"><span>Age estimate</span><strong>{investigation.characterization.estimated_age_hours != null ? `${investigation.characterization.estimated_age_hours} h` : "Not available"}</strong></div>
         {investigation.origin && <div className="metric"><span>Origin uncertainty</span><strong>±{investigation.origin.uncertainty_km} km</strong></div>}
+      </div>
+
+      <div className="evidence-panel">
+        <div className="evidence-panel-header">
+          <div>
+            <p className="eyebrow">EVIDENCE STATUS</p>
+            <h3>Multi-Source Investigation</h3>
+          </div>
+          <span className="evidence-live">ACTIVE</span>
+        </div>
+        <div className="evidence-item"><span className="evidence-icon">🛰</span><div><strong>Satellite</strong><p>Real Sentinel-1 SAR test scene</p></div><span className="evidence-tag real">REAL</span></div>
+        <div className="evidence-item"><span className="evidence-icon">🤖</span><div><strong>AI Detection</strong><p>U-Net + radiometric validation</p></div><span className="evidence-tag real">REAL</span></div>
+        <div className="evidence-item"><span className="evidence-icon">🌊</span><div><strong>Drift Model</strong><p>Backward + forward prototype</p></div><span className="evidence-tag demo">DEMO</span></div>
+        <div className="evidence-item"><span className="evidence-icon">🚢</span><div><strong>AIS Correlation</strong><p>Representative vessel trajectories</p></div><span className="evidence-tag demo">DEMO</span></div>
       </div>
 
       <div className="section">
@@ -32,11 +46,9 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
           const score = vessel.attribution_score * 100;
           return (
             <button className={`suspect-card ${index === 0 ? "top-suspect" : ""}`} key={vessel.mmsi} type="button" onClick={() => onSelectVessel?.(vessel)}>
-              <div className="suspect-header">
-                <div><span className="rank">#{index + 1}</span><strong>{vessel.vessel_name ?? vessel.mmsi}</strong></div>
-                <strong className="suspect-score">{score.toFixed(0)}%</strong>
-              </div>
+              <div className="suspect-header"><div><span className="rank">#{index + 1}</span><strong>{vessel.vessel_name ?? vessel.mmsi}</strong></div><strong className="suspect-score">{score.toFixed(0)}%</strong></div>
               <div className="score-bar"><div className="score-fill" style={{ width: `${score}%` }} /></div>
+              {index === 0 && <div className="top-suspect-explanation">Highest-ranked candidate based on spatial proximity, temporal consistency, trajectory match and behavioral evidence.</div>}
               <div className="suspect-details">
                 <div><span>Distance</span><strong>{vessel.distance_km ?? "N/A"} km</strong></div>
                 <div><span>Time Δ</span><strong>{vessel.time_difference_hours ?? "N/A"} h</strong></div>
