@@ -30,6 +30,7 @@ L.Icon.Default.mergeOptions({
 const vesselIcon = L.divIcon({ className: "vessel-marker", html: "🚢", iconSize: [32, 32], iconAnchor: [16, 16] });
 const spillIcon = L.divIcon({ className: "spill-marker", html: `<div class="spill-marker-inner"></div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
 const originIcon = L.divIcon({ className: "origin-marker", html: `<div class="origin-marker-inner"></div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
+const selectedVesselIcon = L.divIcon({ className: "selected-vessel-marker", html: `<div class="selected-vessel-inner">🚢</div>`, iconSize: [42, 42], iconAnchor: [21, 21] });
 
 function IncidentOverview({ investigation }: { investigation: Investigation }) {
   const map = useMap();
@@ -77,21 +78,19 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
   useEffect(() => {
     fetch("/data/SP-001_spill.geojson")
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to load AI spill footprint");
-        }
+        if (!response.ok) throw new Error("Failed to load AI spill footprint");
         return response.json();
       })
       .then((data) => setSpillGeoJson(data))
-      .catch((error) => {
-        console.error("AI spill footprint:", error);
-      });
+      .catch((error) => console.error("AI spill footprint:", error));
   }, []);
+
   const spillPosition: [number, number] = [investigation.centroid.lat, investigation.centroid.lon];
   const originPosition: [number, number] | null = investigation.origin
     ? [investigation.origin.latitude, investigation.origin.longitude]
     : null;
   const driftPath: [number, number][] = investigation.drift.map((point) => [point.latitude, point.longitude]);
+  const topVessel = investigation.vessels[0];
 
   const tracksByVessel = investigation.vessel_tracks.reduce<Record<string, [number, number][]>>((groups, point) => {
     groups[point.mmsi] ??= [];
@@ -99,31 +98,34 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
     return groups;
   }, {});
 
+  const driftDirection = driftPath.length >= 2
+    ? driftPath[driftPath.length - 1]
+    : null;
+
   return (
     <MapContainer center={[28.9, -89.0]} zoom={7} scrollWheelZoom style={{ height: "100%", width: "100%" }}>
       <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <IncidentOverview investigation={investigation} />
       <FocusSelectedVessel vessel={selectedVessel} />
       <FocusInvestigationButton investigation={investigation} />
+
       {spillGeoJson && (
         <GeoJSON
           data={spillGeoJson}
-          style={{
+          style={() => ({
+            color: "#ef4444",
             weight: 2,
-            fillOpacity: 0.35,
-          }}
+            opacity: 0.95,
+            fillColor: "#ef4444",
+            fillOpacity: 0.24,
+          })}
         >
           <Popup>
-            <strong>AI-Detected Spill Footprint</strong>
-            <br />
-            Source: Sentinel-1 SAR
-            <br />
-            Method: U-Net + radiometric validation
-            <br />
-            Area: {investigation.area_km2} km²
-            <br />
-            Mean AI confidence:{" "}
-            {(investigation.confidence * 100).toFixed(1)}%
+            <strong>AI-Detected Spill Footprint</strong><br />
+            Source: Sentinel-1 SAR<br />
+            Method: U-Net + radiometric validation<br />
+            Area: {investigation.area_km2} km²<br />
+            Mean AI confidence: {(investigation.confidence * 100).toFixed(1)}%
           </Popup>
         </GeoJSON>
       )}
@@ -131,15 +133,25 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
       <div className="map-overview-label">
         GULF OF MEXICO • REAL SENTINEL-1 TEST SCENE
       </div>
+
+      <div className="map-hero-card">
+        <div className="map-hero-kicker">AI INVESTIGATION</div>
+        <strong>{investigation.spill_id} • {investigation.area_km2} km²</strong>
+        <span>Real SAR detection → prototype trace → AIS ranking</span>
+      </div>
+
       <div className="map-legend">
         <div className="legend-title">MAP LEGEND</div>
-        <div>
-          <span className="legend-dot legend-spill" /> AI-detected spill footprint
-        </div>
+        <div><span className="legend-footprint" /> AI-detected spill footprint</div>
         <div><span className="legend-dot legend-origin" /> Probable origin</div>
         <div><span className="legend-line" /> Prototype oil drift</div>
         <div><span className="legend-track" /> Representative AIS track</div>
         <div><span className="legend-ship">🚢</span> Ranked AIS candidate</div>
+      </div>
+
+      <div className="map-status-card">
+        <strong>● INVESTIGATION ACTIVE</strong>
+        <span>DETECT → TRACE → ATTRIBUTE</span>
       </div>
 
       <Marker position={spillPosition} icon={spillIcon}>
@@ -148,17 +160,17 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
           AI-validated oil-spill candidate<br />
           Confidence: {(investigation.confidence * 100).toFixed(0)}%<br />
           Area: {investigation.area_km2} km²<br />
-          Age estimate: {investigation.characterization.estimated_age_hours ?? "N/A"} h
+          Age estimate: {investigation.characterization.estimated_age_hours != null ? `${investigation.characterization.estimated_age_hours} h` : "Not available"}
         </Popup>
       </Marker>
 
       {originPosition && (
         <>
-          <Circle center={originPosition} radius={investigation.origin!.uncertainty_km * 1000} pathOptions={{ fillOpacity: 0.15 }} />
+          <Circle center={originPosition} radius={investigation.origin!.uncertainty_km * 1000} pathOptions={{ fillOpacity: 0.12, weight: 2, dashArray: "7 6" }} />
           <Marker position={originPosition} icon={originIcon}>
             <Popup>
               <strong>Probable Spill Origin</strong><br />
-              Uncertainty: {investigation.origin!.uncertainty_km} km<br />
+              Uncertainty: ±{investigation.origin!.uncertainty_km} km<br />
               Method: {investigation.origin!.method ?? "Unknown"}
             </Popup>
           </Marker>
@@ -166,24 +178,30 @@ export default function MapView({ investigation, selectedVessel }: MapViewProps)
       )}
 
       {driftPath.length > 1 && (
-        <Polyline positions={driftPath} pathOptions={{ weight: 4 }}>
+        <Polyline positions={driftPath} pathOptions={{ weight: 4, opacity: 0.9 }}>
           <Popup>Prototype backward hindcast + forward forecast drift path</Popup>
         </Polyline>
       )}
 
+      {driftDirection && (
+        <Marker position={driftDirection} icon={L.divIcon({ className: "drift-end-marker", html: "➤", iconSize: [24, 24], iconAnchor: [12, 12] })} interactive={false} />
+      )}
+
       {Object.entries(tracksByVessel).map(([mmsi, points]) => (
-        <Polyline key={`track-${mmsi}`} positions={points} pathOptions={{ weight: 2, dashArray: "6 7", opacity: 0.7 }}>
+        <Polyline key={`track-${mmsi}`} positions={points} pathOptions={{ weight: 2, dashArray: "6 7", opacity: 0.65 }}>
           <Popup>Representative AIS trajectory • {mmsi}</Popup>
         </Polyline>
       ))}
 
       {investigation.vessels.map((vessel) => {
         if (vessel.latitude == null || vessel.longitude == null) return null;
+        const isSelected = selectedVessel?.mmsi === vessel.mmsi;
+        const isTop = topVessel?.mmsi === vessel.mmsi;
         return (
-          <Marker key={vessel.mmsi} position={[vessel.latitude, vessel.longitude]} icon={vesselIcon}>
+          <Marker key={vessel.mmsi} position={[vessel.latitude, vessel.longitude]} icon={isSelected || isTop ? selectedVesselIcon : vesselIcon}>
             <Popup>
               <strong>{vessel.vessel_name ?? "Unknown Vessel"}</strong><br />
-              AIS candidate • Representative data<br />
+              {isTop ? "#1 ranked AIS candidate" : "AIS candidate"} • Representative data<br />
               MMSI: {vessel.mmsi}<br />
               Attribution Score: {(vessel.attribution_score * 100).toFixed(0)}%<br />
               Proximity: {vessel.proximity_score != null ? `${(vessel.proximity_score * 100).toFixed(0)}%` : "N/A"}<br />
