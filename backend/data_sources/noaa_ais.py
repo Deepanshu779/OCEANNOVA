@@ -15,14 +15,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-NOAA_AIS_2018_URL = (
-    "https://ocmgeodatastor1.blob.core.windows.net/marinecadastre/ais/aistrack/"
-    "AISVesselTracks2018.zip"
-)
-NOAA_AIS_INDEX_URL = (
-    "https://ocmgeodatastor1.blob.core.windows.net/marinecadastre/ais/aistrack/"
-    "index-aistrack.html"
-)
+NOAA_AIS_2018_URL = "https://ocmgeodatastor1.blob.core.windows.net/marinecadastre/ais/aistrack/AISVesselTracks2018.zip"
+NOAA_AIS_INDEX_URL = "https://ocmgeodatastor1.blob.core.windows.net/marinecadastre/ais/aistrack/index-aistrack.html"
 
 
 @dataclass(frozen=True)
@@ -66,18 +60,16 @@ def load_csv(path: str | Path) -> list[AISPoint]:
             ts = _first(row, "BaseDateTime", "Timestamp", "timestamp", "TrackStartTime")
             if not all((mmsi, lat, lon, ts)):
                 continue
-            points.append(
-                AISPoint(
-                    mmsi=str(mmsi),
-                    timestamp=_timestamp(str(ts)),
-                    latitude=float(lat),
-                    longitude=float(lon),
-                    speed_knots=float(_first(row, "SOG", "Speed", "speed") or 0),
-                    course=float(_first(row, "COG", "Course", "course") or 0),
-                    vessel_name=_first(row, "VesselName", "Vessel Name", "name"),
-                    vessel_type=_first(row, "VesselType", "Vessel Type", "type"),
-                )
-            )
+            points.append(AISPoint(
+                mmsi=str(mmsi),
+                timestamp=_timestamp(str(ts)),
+                latitude=float(lat),
+                longitude=float(lon),
+                speed_knots=float(_first(row, "SOG", "Speed", "speed") or 0),
+                course=float(_first(row, "COG", "Course", "course") or 0),
+                vessel_name=_first(row, "VesselName", "Vessel Name", "name"),
+                vessel_type=_first(row, "VesselType", "Vessel Type", "type"),
+            ))
     return sorted(points, key=lambda p: p.timestamp)
 
 
@@ -99,13 +91,14 @@ def filter_origin_window(
     hours_before: int = 12,
     hours_after: int = 12,
 ) -> list[AISPoint]:
-    """Keep AIS positions relevant to the reconstructed spill-origin window."""
+    """Keep AIS positions inside the origin radius and time window."""
     origin_time = origin_time.astimezone(timezone.utc) if origin_time.tzinfo else origin_time.replace(tzinfo=timezone.utc)
+    start = origin_time.timestamp() - hours_before * 3600
+    end = origin_time.timestamp() + hours_after * 3600
     return [
         point for point in points
-        if abs((point.timestamp - origin_time).total_seconds()) <= hours_before * 3600
-        or abs((point.timestamp - origin_time).total_seconds()) <= hours_after * 3600
-        if haversine_km(point.latitude, point.longitude, origin_lat, origin_lon) <= radius_km
+        if start <= point.timestamp.timestamp() <= end
+        and haversine_km(point.latitude, point.longitude, origin_lat, origin_lon) <= radius_km
     ]
 
 
