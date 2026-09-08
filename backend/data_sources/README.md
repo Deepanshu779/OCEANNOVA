@@ -1,31 +1,69 @@
 # Real-data adapters
 
-OCEANNOVA can run the complete investigation pipeline with provider-neutral exports. The adapters deliberately avoid hard-coding a commercial API so the same code can consume Copernicus/NOAA exports and other approved sources.
+OCEANNOVA now includes provider-specific adapters for the SP-001 Gulf of Mexico case while keeping the application deployable without large binary datasets.
 
-## Ocean forcing
+## 1. Real ocean forcing — HYCOM
 
-Prepare `ocean_forcing.csv` with:
+For the 2018 Sentinel-1 scene, the recommended historical forcing source is the **HYCOM-TSIS Gulf of Mexico 1/25° reanalysis**. HYCOM publishes hourly current and wind-related fields and provides an NCSS subset service, so OCEANNOVA requests only the incident point/time instead of downloading the full year.
+
+- Dataset catalog: https://ncss.hycom.org/thredds/catalogs/GOMb0.04/reanalysis.html
+- Current variables: `u`, `v`
+- Wind variables: `wnd_ewd`, `wnd_nwd`
+- Adapter: `data_sources.hycom_gulf.fetch_point_forcing()`
+- Real-data drift runner: `drift/real_hycom_drift.py`
+
+Example:
+
+```bash
+python drift/real_hycom_drift.py
+```
+
+The runner writes `data/processed/ai_predictions/SP-001_real_hycom_drift.json` and marks the source as `REAL_HYCOM_HISTORICAL_FORCING`.
+
+## 2. Real historical AIS — NOAA MarineCadastre
+
+NOAA MarineCadastre publishes the annual **AIS Vessel Tracks 2018** archive. The public archive is about 3.23 GB, so it must not be committed to Git or downloaded by the Render web service.
+
+- Index: https://ocmgeodatastor1.blob.core.windows.net/marinecadastre/ais/aistrack/index-aistrack.html
+- 2018 archive: https://ocmgeodatastor1.blob.core.windows.net/marinecadastre/ais/aistrack/AISVesselTracks2018.zip
+- Adapter: `data_sources.noaa_ais`
+- Attribution runner: `ais/run_noaa_real_attribution.py`
+
+Prepare a **clipped CSV** containing the SP-001 origin region/time window and run:
+
+```bash
+python ais/run_noaa_real_attribution.py data/real/ais/SP-001_noaa_ais.csv
+```
+
+The output is marked `REAL_NOAA_AIS`; representative demo tracks are never silently relabelled as real.
+
+Minimum normalized AIS fields:
+
+`MMSI, BaseDateTime, LAT, LON`
+
+Optional fields:
+
+`SOG, COG, VesselName, VesselType`
+
+## 3. Provider-neutral fallback
+
+`data_sources/ocean_forcing.py` accepts a CSV/JSON forcing export with:
 
 `timestamp,latitude,longitude,current_east_ms,current_north_ms,wind_east_ms,wind_north_ms`
 
-The loader is `data_sources.ocean_forcing.load_forcing()` and selects the nearest record in space/time.
+`data_sources/ais_csv.py` accepts a normalized AIS CSV when a different approved provider is used.
 
-Recommended operational source: Copernicus Marine current data plus a meteorological wind product. Store credentials locally/in Render environment variables; never commit secrets.
+## 4. Spill age
 
-## Historical AIS
+`data_sources.spill_age.estimate_age_hours()` provides an uncertainty-aware hindcast-window estimate. It is intentionally labelled as an estimate and must not be presented as a laboratory/chemical age measurement.
 
-Prepare `ais.csv` with at minimum:
+## Evidence policy
 
-`mmsi,timestamp,latitude,longitude`
+The dashboard must distinguish:
 
-Optional fields: `speed_knots`/`sog` and `course`/`cog`/`heading`.
+- **REAL** — directly sourced public/approved data.
+- **MODEL OUTPUT** — produced by OCEANNOVA algorithms from the supplied inputs.
+- **DERIVED** — calculated from real data/model outputs.
+- **DEMO** — representative data used only when the corresponding real source is unavailable.
 
-Use `data_sources.ais_csv.load_ais_csv()` and `group_tracks()` before passing tracks into the attribution pipeline.
-
-## Spill age
-
-`data_sources.spill_age.estimate_age_hours()` reports an uncertainty-aware hindcast-window estimate. It is intentionally labelled as an estimate and must not be presented as a laboratory/chemical age measurement.
-
-## What is still required for a real-data run
-
-The code is ready, but the team must supply an approved **historical AIS export covering the SP-001 origin window and area** and a matching **ocean current + wind export**. These are data inputs, not software dependencies. Do not fabricate AIS evidence or API credentials.
+Never fabricate vessel identities, AIS positions, environmental values, or legal responsibility claims.
