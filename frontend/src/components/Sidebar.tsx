@@ -7,6 +7,8 @@ interface SidebarProps {
 
 export default function Sidebar({ investigation, onSelectVessel }: SidebarProps) {
   const topVessels = investigation.vessels.slice(0, 3);
+  const confidence = investigation.confidence * 100;
+  const best = topVessels[0];
 
   return (
     <aside className="sidebar">
@@ -18,8 +20,8 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
       <div className="spill-card">
         <div className="label">AI-VALIDATED SPILL</div>
         <h3>{investigation.spill_id}</h3>
-        <div className="metric"><span>Confidence</span><strong>{(investigation.confidence * 100).toFixed(0)}%</strong></div>
-        <div className="metric"><span>Area</span><strong>{investigation.area_km2} km²</strong></div>
+        <div className="metric"><span>AI confidence</span><strong>{confidence.toFixed(1)}%</strong></div>
+        <div className="metric"><span>Detected area</span><strong>{investigation.area_km2} km²</strong></div>
         <div className="metric"><span>Perimeter</span><strong>{investigation.characterization.perimeter_estimate_km ?? "N/A"} km</strong></div>
         <div className="metric"><span>Compactness</span><strong>{investigation.characterization.compactness_estimate ?? "N/A"}</strong></div>
         <div className="metric"><span>Age estimate</span><strong>{investigation.characterization.estimated_age_hours != null ? `${investigation.characterization.estimated_age_hours} h` : "Not available"}</strong></div>
@@ -28,16 +30,19 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
 
       <div className="evidence-panel">
         <div className="evidence-panel-header">
-          <div>
-            <p className="eyebrow">EVIDENCE STATUS</p>
-            <h3>Multi-Source Investigation</h3>
-          </div>
+          <div><p className="eyebrow">EVIDENCE STATUS</p><h3>Multi-Source Investigation</h3></div>
           <span className="evidence-live">ACTIVE</span>
         </div>
-        <div className="evidence-item"><span className="evidence-icon">🛰</span><div><strong>Satellite</strong><p>Real Sentinel-1 SAR test scene</p></div><span className="evidence-tag real">REAL</span></div>
-        <div className="evidence-item"><span className="evidence-icon">🤖</span><div><strong>AI Detection</strong><p>U-Net + radiometric validation</p></div><span className="evidence-tag real">REAL</span></div>
-        <div className="evidence-item"><span className="evidence-icon">🌊</span><div><strong>Drift Model</strong><p>Backward + forward prototype</p></div><span className="evidence-tag demo">DEMO</span></div>
-        <div className="evidence-item"><span className="evidence-icon">🚢</span><div><strong>AIS Correlation</strong><p>Representative vessel trajectories</p></div><span className="evidence-tag demo">DEMO</span></div>
+        <div className="evidence-item"><span className="evidence-icon">🛰</span><div><strong>01 · Detect</strong><p>Sentinel-1 SAR + U-Net segmentation</p></div><span className="evidence-tag real">REAL</span></div>
+        <div className="evidence-item"><span className="evidence-icon">✓</span><div><strong>02 · Validate</strong><p>Radiometric + connected-component filtering</p></div><span className="evidence-tag real">REAL</span></div>
+        <div className="evidence-item"><span className="evidence-icon">🌊</span><div><strong>03 · Trace</strong><p>Backward / forward drift reconstruction</p></div><span className="evidence-tag demo">DEMO</span></div>
+        <div className="evidence-item"><span className="evidence-icon">🚢</span><div><strong>04 · Correlate</strong><p>AIS proximity + temporal + trajectory evidence</p></div><span className="evidence-tag demo">DEMO</span></div>
+      </div>
+
+      <div className="section decision-card">
+        <div className="section-heading"><h3>Investigation Signal</h3><span>Explainable</span></div>
+        <p className="micro-copy">The pipeline narrows a detected slick into a probable origin and ranks nearby vessel candidates using independent evidence factors.</p>
+        {best && <div className="decision-highlight"><span>Current #1 candidate</span><strong>{best.vessel_name ?? best.mmsi} · {(best.attribution_score * 100).toFixed(1)}%</strong><small>Review the factor breakdown below before drawing conclusions.</small></div>}
       </div>
 
       <div className="section">
@@ -46,9 +51,9 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
           const score = vessel.attribution_score * 100;
           return (
             <button className={`suspect-card ${index === 0 ? "top-suspect" : ""}`} key={vessel.mmsi} type="button" onClick={() => onSelectVessel?.(vessel)}>
-              <div className="suspect-header"><div><span className="rank">#{index + 1}</span><strong>{vessel.vessel_name ?? vessel.mmsi}</strong></div><strong className="suspect-score">{score.toFixed(0)}%</strong></div>
-              <div className="score-bar"><div className="score-fill" style={{ width: `${score}%` }} /></div>
-              {index === 0 && <div className="top-suspect-explanation">Highest-ranked candidate based on spatial proximity, temporal consistency, trajectory match and behavioral evidence.</div>}
+              <div className="suspect-header"><div><span className="rank">#{index + 1}</span><strong>{vessel.vessel_name ?? vessel.mmsi}</strong></div><strong className="suspect-score">{score.toFixed(1)}%</strong></div>
+              <div className="score-bar"><div className="score-fill" style={{ width: `${Math.min(score, 100)}%` }} /></div>
+              {index === 0 && <div className="top-suspect-explanation">Explainable score: proximity 35% · temporal 20% · trajectory 30% · behavior 15%.</div>}
               <div className="suspect-details">
                 <div><span>Distance</span><strong>{vessel.distance_km ?? "N/A"} km</strong></div>
                 <div><span>Time Δ</span><strong>{vessel.time_difference_hours ?? "N/A"} h</strong></div>
@@ -63,7 +68,7 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
       </div>
 
       <div className="section">
-        <div className="section-heading"><h3>AIS Evidence</h3><span>Representative tracks</span></div>
+        <div className="section-heading"><h3>AIS Evidence</h3><span>Source status</span></div>
         <div className="metric"><span>Total vessels</span><strong>{investigation.traffic.total_vessels_considered}</strong></div>
         <div className="metric"><span>Filtered irrelevant</span><strong>{investigation.traffic.filtered_irrelevant}</strong></div>
         <div className="metric"><span>Ranked candidates</span><strong>{investigation.traffic.ranked_candidates}</strong></div>
@@ -78,16 +83,17 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
       </div>
 
       <div className="section investigation-summary">
-        <div className="section-heading"><h3>Investigation Summary</h3><span>Pipeline</span></div>
-        <div className="summary-step"><span className="summary-number">01</span><div><strong>Detect + Characterize</strong><p>Sentinel-1 SAR + U-Net + radiometric validation</p></div></div>
-        <div className="summary-step"><span className="summary-number">02</span><div><strong>Reconstruct Origin</strong><p>{investigation.origin ? `±${investigation.origin.uncertainty_km} km uncertainty` : "Not available"}</p></div></div>
-        <div className="summary-step"><span className="summary-number">03</span><div><strong>Hindcast + Forecast</strong><p>{investigation.drift.length} timestamped drift points</p></div></div>
-        <div className="summary-step"><span className="summary-number">04</span><div><strong>Filter + Rank AIS</strong><p>{investigation.traffic.ranked_candidates} candidates from {investigation.traffic.total_vessels_considered} vessels</p></div></div>
+        <div className="section-heading"><h3>Investigation Pipeline</h3><span>SIH flow</span></div>
+        <div className="summary-step"><span className="summary-number">01</span><div><strong>DETECT</strong><p>SAR + U-Net identifies dark slick candidates</p></div></div>
+        <div className="summary-step"><span className="summary-number">02</span><div><strong>CHARACTERIZE</strong><p>Area, perimeter, compactness and confidence</p></div></div>
+        <div className="summary-step"><span className="summary-number">03</span><div><strong>TRACE</strong><p>Drift hindcast reconstructs probable origin</p></div></div>
+        <div className="summary-step"><span className="summary-number">04</span><div><strong>CORRELATE</strong><p>AIS traffic filtered around the origin window</p></div></div>
+        <div className="summary-step"><span className="summary-number">05</span><div><strong>RANK</strong><p>Explainable multi-factor candidate scoring</p></div></div>
       </div>
 
       <div className="disclaimer-card">
         <strong>Evidence boundary</strong>
-        <p>Satellite detection is evaluated on a real test scene. Environmental inputs and AIS tracks are representative demo data. Attribution is decision support, not proof of legal responsibility.</p>
+        <p>Satellite detection is evaluated on a real test scene. Environmental inputs and AIS tracks are representative demo data. Attribution is investigative decision support, not proof of legal responsibility.</p>
       </div>
     </aside>
   );
