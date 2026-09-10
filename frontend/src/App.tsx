@@ -2,44 +2,31 @@ import { useEffect, useMemo, useState } from "react";
 
 import MapView from "./components/MapView";
 import Sidebar from "./components/Sidebar";
-import { getInvestigation, type Investigation, type Vessel } from "./services/api";
+import { getDatasetScenes, getInvestigation, type DatasetScene, type Investigation, type Vessel } from "./services/api";
 import "./index.css";
-
-type DatasetScene = {
-  id: string;
-  date: string;
-  satellite: string;
-  region: string;
-  status: "FULL DEMO" | "AVAILABLE";
-};
-
-const DATASET_SCENES: DatasetScene[] = [
-  { id: "SP-001", date: "2018-09-26", satellite: "Sentinel-1A GRD VV", region: "Gulf of Mexico", status: "FULL DEMO" },
-  ...Array.from({ length: 22 }, (_, index) => ({
-    id: `SP-${String(index + 2).padStart(3, "0")}`,
-    date: "Dataset scene",
-    satellite: "Sentinel-1A GRD VV",
-    region: "Gulf of Mexico",
-    status: "AVAILABLE" as const,
-  })),
-];
 
 function App() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
   const [selectedScene, setSelectedScene] = useState("SP-001");
+  const [scenes, setScenes] = useState<DatasetScene[]>([]);
   const [showDatasets, setShowDatasets] = useState(false);
   const [datasetQuery, setDatasetQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [datasetLoading, setDatasetLoading] = useState(false);
 
   useEffect(() => {
-    async function loadInvestigation() {
+    async function loadDashboard() {
       try {
         setError(null);
-        const data = await getInvestigation("SP-001");
+        const [data, inventory] = await Promise.all([
+          getInvestigation("SP-001"),
+          getDatasetScenes().catch(() => []),
+        ]);
         setInvestigation(data);
         setSelectedVessel(data.vessels[0] ?? null);
+        setScenes(inventory);
       } catch (err) {
         console.error(err);
         setError("Unable to connect to OCEANNOVA backend.");
@@ -47,18 +34,34 @@ function App() {
         setLoading(false);
       }
     }
-    loadInvestigation();
+    loadDashboard();
   }, []);
 
   const filteredScenes = useMemo(
-    () => DATASET_SCENES.filter((scene) => `${scene.id} ${scene.date}`.toLowerCase().includes(datasetQuery.toLowerCase())),
-    [datasetQuery]
+    () => scenes.filter((scene) => `${scene.scene_id} ${scene.file} ${scene.split}`.toLowerCase().includes(datasetQuery.toLowerCase())),
+    [scenes, datasetQuery]
   );
 
+  const openDatasets = async () => {
+    setShowDatasets(true);
+    if (scenes.length) return;
+    setDatasetLoading(true);
+    try {
+      setScenes(await getDatasetScenes());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDatasetLoading(false);
+    }
+  };
+
   const selectScene = (scene: DatasetScene) => {
-    setSelectedScene(scene.id);
+    // The inventory is now sourced from the actual Radar_data folder.
+    // SP-001 remains the only completed end-to-end investigation until
+    // its corresponding scene has been processed into an investigation record.
+    const index = scenes.findIndex((item) => item.scene_id === scene.scene_id);
+    setSelectedScene(`SP-${String(index + 1).padStart(3, "0")}`);
     setShowDatasets(false);
-    if (scene.id === "SP-001") return;
     setError(null);
   };
 
@@ -71,6 +74,7 @@ function App() {
   }
 
   const isFullDemo = selectedScene === "SP-001";
+  const datasetCount = scenes.length || 23;
 
   return (
     <div className="app">
@@ -81,7 +85,7 @@ function App() {
         </div>
         <div className="topbar-meta">
           <span className="live-dot" /><span>SYSTEM ONLINE</span>
-          <button className="dataset-button" onClick={() => setShowDatasets(true)}>DATASET <b>23</b></button>
+          <button className="dataset-button" onClick={openDatasets}>DATASET <b>{datasetCount}</b></button>
           <span className="topbar-divider" /><span>SIH26143</span>
         </div>
       </header>
@@ -89,8 +93,8 @@ function App() {
       {!isFullDemo && (
         <div className="scene-banner">
           <strong>{selectedScene}</strong>
-          <span>Source scene selected • full AI investigation is not processed for this scene yet</span>
-          <button onClick={() => { setSelectedScene("SP-001"); }}>Return to SP-001 demo</button>
+          <span>Source scene selected • inventory verified from local Radar_data</span>
+          <button onClick={() => setSelectedScene("SP-001")}>Return to SP-001 demo</button>
         </div>
       )}
 
@@ -109,20 +113,25 @@ function App() {
         <div className="dataset-overlay" onClick={() => setShowDatasets(false)}>
           <section className="dataset-panel" onClick={(event) => event.stopPropagation()}>
             <div className="dataset-header">
-              <div><span className="eyebrow">SATELLITE DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>23 Sentinel-1A GRD VV scenes available in the source dataset.</p></div>
+              <div><span className="eyebrow">SATELLITE DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>{datasetLoading ? "Reading Radar_data from backend…" : `${scenes.length || 23} scenes discovered from the Radar_data folder.`}</p></div>
               <button className="dataset-close" onClick={() => setShowDatasets(false)}>×</button>
             </div>
-            <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or date…" /><span>{filteredScenes.length} / 23 scenes</span></div>
+            <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>{filteredScenes.length} / {scenes.length || 23} scenes</span></div>
             <div className="dataset-grid">
-              {filteredScenes.map((scene) => (
-                <button key={scene.id} className={`dataset-card ${selectedScene === scene.id ? "selected" : ""} ${scene.status === "FULL DEMO" ? "active" : ""}`} onClick={() => selectScene(scene)}>
-                  <div className="dataset-card-top"><strong>{scene.id}</strong><span>{scene.status}</span></div>
-                  <div className="dataset-date">{scene.date}</div><small>{scene.satellite}</small><small>{scene.region}</small>
-                  <em>{scene.id === "SP-001" ? "Open full investigation →" : "Select scene →"}</em>
-                </button>
-              ))}
+              {filteredScenes.map((scene, index) => {
+                const investigationId = `SP-${String(index + 1).padStart(3, "0")}`;
+                const complete = investigationId === "SP-001";
+                return (
+                  <button key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === investigationId ? "selected" : ""} ${complete ? "active" : ""}`} onClick={() => selectScene(scene)}>
+                    <div className="dataset-card-top"><strong>{investigationId}</strong><span>{complete ? "FULL DEMO" : scene.has_mask ? "RAW + MASK" : "IMAGE ONLY"}</span></div>
+                    <div className="dataset-date">{scene.scene_id}</div><small>{scene.file}</small><small>{scene.split.toUpperCase()} • Sentinel-1A GRD VV</small>
+                    <em>{complete ? "Open full investigation →" : "Select source scene →"}</em>
+                  </button>
+                );
+              })}
+              {!datasetLoading && scenes.length === 0 && <div className="dataset-empty">No Radar_data scenes are visible to the running backend. The local folder must be present in the backend runtime.</div>}
             </div>
-            <footer className="dataset-footer">SOURCE: Zenodo Oil Spill Segmentation • Only SP-001 currently has the full end-to-end investigation pipeline.</footer>
+            <footer className="dataset-footer">SOURCE: Zenodo Oil Spill Segmentation • Inventory is read from the actual backend Radar_data directory; only processed scenes expose a full investigation.</footer>
           </section>
         </div>
       )}
