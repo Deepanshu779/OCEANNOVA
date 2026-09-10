@@ -15,14 +15,13 @@ from app.models.vessel_track import VesselTrackPoint
 from app.api.routes.health import router as health_router
 from app.api.routes.spills import router as spills_router
 from app.api.routes.investigation import router as investigation_router
+from app.api.routes.datasets import router as datasets_router
 
 
-# Render Postgres supports PostGIS. Enable it before creating spatial tables.
 with engine.begin() as connection:
     connection.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
 
 Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI(
     title="OCEANNOVA API",
@@ -30,10 +29,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-allowed_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
+allowed_origins = ["http://localhost:5173", "http://127.0.0.1:5173"]
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     allowed_origins.append(frontend_url.rstrip("/"))
@@ -50,6 +46,7 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(spills_router, prefix="/api/v1")
 app.include_router(investigation_router, prefix="/api/v1")
+app.include_router(datasets_router, prefix="/api/v1")
 
 
 @app.get("/")
