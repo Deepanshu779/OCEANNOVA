@@ -59,6 +59,8 @@ class InvestigationResponse(BaseModel):
     confidence: float
     area_km2: float
     centroid: dict
+    detection_time: str | None = None
+    origin_time: str | None = None
     characterization: SpillCharacterizationResponse
     origin: OriginResponse | None = None
     drift: list[DriftPointResponse]
