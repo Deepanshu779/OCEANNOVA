@@ -11,494 +11,215 @@
 [![Backend](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://oceannova-api.onrender.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-**SIH 2026 • Problem Statement 26143 • Team OCEANNOVA**
+**Smart India Hackathon 2026 • PS 26143 • Team OCEANNOVA**
 
 </div>
 
 ---
 
-## 📌 Overview
-
-**OCEANNOVA** is a geospatial decision-support platform designed to investigate marine oil spills by combining **satellite SAR imagery, spill characterization, ocean drift modelling, historical AIS vessel trajectories, and explainable vessel attribution** in a single GIS interface.
-
-Instead of stopping at spill detection, OCEANNOVA follows the investigation chain:
-
-> **Detect the slick → characterize it → reconstruct where it likely originated → estimate how it will move → reconstruct relevant vessel traffic → filter irrelevant vessels → rank investigative candidates.**
-
-The platform is being developed for **Smart India Hackathon 2026 — PS 26143**, focused on leveraging satellite imagery and AIS correlations to investigate vessels potentially responsible for marine oil spills.
-
-> ⚠️ **Attribution disclaimer:** OCEANNOVA produces an explainable investigative ranking based on available evidence. It does **not** establish legal responsibility or prove that a particular vessel caused a spill.
-
----
-
 ## 🚀 Live Demo
 
-### 🌐 Web Application
+- **Web:** https://oceannova-ochre.vercel.app/
+- **API:** https://oceannova-api.onrender.com
+- **Investigation:** `GET /api/v1/spills/SP-001/investigation`
 
-**https://oceannova-ochre.vercel.app/**
+## 🎯 What We Solve
 
-### ⚙️ Backend API
+OCEANNOVA turns a satellite-detected oil slick into an explainable maritime investigation workflow:
 
-**https://oceannova-api.onrender.com**
+**Detect → Characterize → Trace → Correlate → Rank**
 
-### 🔎 Demo Investigation
+The platform combines Sentinel-1 SAR, spill geometry, ocean drift modelling, AIS vessel trajectories and explainable attribution in one GIS interface. It is designed as decision support: attribution scores prioritize candidates but do not establish legal responsibility.
 
-**SP-001** is a seeded offshore demonstration scenario that exercises the complete investigation workflow, including spill characterization, origin reconstruction, drift, AIS filtering and vessel ranking.
-
----
-
-## 🎯 Problem Statement
-
-**SIH26143 / PS 26143** — *Leveraging satellite imagery to determine oil spills at sea along with AIS data correlations to identify the vessel responsible for the spill.*
-
-The system is designed around the following investigation requirements:
-
-- Detect and characterize marine oil spills from satellite imagery.
-- Estimate geometric properties and spill age where feasible.
-- Combine oceanographic and meteorological information for drift analysis.
-- Reconstruct the probable spill origin and time window.
-- Forecast future spill movement.
-- Reconstruct historical AIS vessel traffic around the origin window.
-- Remove irrelevant vessel traffic using spatial and temporal constraints.
-- Rank candidate vessels using explainable multi-factor evidence.
-- Provide an integrated visual investigation interface.
-
----
-
-## ✨ Key Capabilities
-
-| Capability | OCEANNOVA Approach |
-|---|---|
-| 🛰️ **Satellite Detection** | Sentinel-1 SAR ingestion, preprocessing and segmentation benchmarking |
-| 🛢️ **Spill Characterization** | Area, perimeter estimate, compactness and observation/age metadata |
-| 🧭 **Origin Reconstruction** | Backward drift hindcasting with an uncertainty region |
-| 🌊 **Drift Forecasting** | Timestamped forward movement simulation |
-| 🌬️ **Environmental Context** | Current and wind fields represented in the drift pipeline |
-| 🚢 **AIS Reconstruction** | Historical vessel tracks around the reconstructed origin window |
-| 🔎 **Traffic Filtering** | Spatial proximity + temporal consistency filtering |
-| 📊 **Explainable Attribution** | Proximity, temporal, trajectory and behavioural evidence |
-| 🗺️ **GIS Investigation** | Interactive React + Leaflet maritime dashboard |
-| 🗄️ **Geospatial Storage** | PostgreSQL + PostGIS |
-| ⚡ **API Layer** | FastAPI investigation endpoints |
-
----
-
-## 🧠 Investigation Pipeline
+## 🧠 End-to-End Pipeline
 
 ```text
-┌─────────────────────────┐
-│ Sentinel-1 SAR / EO     │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ SAR Preprocessing       │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Oil-Spill Segmentation  │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Look-Alike Filtering    │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Spill Characterization  │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Currents + Wind         │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Drift Hindcast/Forecast │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Probable Origin + Error │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Historical AIS Tracks   │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Irrelevant Traffic      │
-│ Filtering               │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ Explainable Attribution │
-└────────────┬────────────┘
-             ↓
-┌─────────────────────────┐
-│ GIS Investigation       │
-│ Dashboard               │
-└─────────────────────────┘
+Sentinel-1 SAR
+     ↓
+SAR preprocessing
+     ↓
+U-Net spill segmentation
+     ↓
+Radiometric / look-alike validation
+     ↓
+Area + perimeter + compactness
+     ↓
+Ocean current + wind forcing
+     ↓
+Backward / forward drift modelling
+     ↓
+Probable origin + uncertainty
+     ↓
+Historical AIS traffic
+     ↓
+Spatial + temporal filtering
+     ↓
+Explainable vessel ranking
+     ↓
+GIS investigation dashboard
 ```
 
----
+## 🛰️ Real Satellite Evidence
 
-## 🏗️ System Architecture
+The repository includes a real Sentinel-1A Gulf of Mexico test scene (`2018_09_26.tif`) with a reference mask. The evaluated real test scene produced the following validation result after the final segmentation/validation pipeline:
 
-```text
-                        OCEANNOVA
-                            │
-          ┌─────────────────┴─────────────────┐
-          │                                   │
-     Data & AI Layer                    Application Layer
-          │                                   │
-   ┌──────┴──────┐                    ┌───────┴────────┐
-   │ Satellite   │                    │ React + Leaflet│
-   │ SAR / EO    │                    │ GIS Dashboard  │
-   └──────┬──────┘                    └───────┬────────┘
-          │                                   │
-   ┌──────▼──────┐                    ┌───────▼────────┐
-   │ Segmentation│                    │ FastAPI        │
-   │ + Lookalike │◄───────────────────┤ REST API       │
-   └──────┬──────┘                    └───────┬────────┘
-          │                                   │
-   ┌──────▼──────┐                    ┌───────▼────────┐
-   │ Drift +     │                    │ PostgreSQL +   │
-   │ Origin      │                    │ PostGIS        │
-   └──────┬──────┘                    └────────────────┘
-          │
-   ┌──────▼──────┐
-   │ AIS Scoring │
-   │ + Attribution│
-   └─────────────┘
-```
+| Metric | Evaluated result |
+|---|---:|
+| IoU | **57.11%** |
+| Dice | **72.70%** |
+| Precision | **93.49%** |
+| Recall | **59.48%** |
 
-### Deployment
+These metrics describe the **evaluated real test scene only** and are not claimed as production-wide model accuracy.
 
-```text
-GitHub
-  │
-  ├── Vercel ──────► React + TypeScript + Leaflet
-  │                         │
-  │                         ▼
-  └── Render ──────► FastAPI Backend
-                            │
-                            ▼
-                     Supabase PostgreSQL
-                         + PostGIS
-```
+The current filtered AI prediction for SP-001 covers **27.0378 km²**, with mean model confidence **95.94%** over predicted spill pixels. These are prediction characteristics, not accuracy metrics.
 
----
+## 🌊 Drift & Origin Reconstruction
 
-## 🧮 Explainable Vessel Attribution
+SP-001 uses the drift/origin pipeline to demonstrate backward hindcasting and forward forecasting. The current prototype reconstructs a probable origin near **28.8523°N, 89.1530°W** with an uncertainty radius of approximately **8.5 km**.
 
-Candidate vessels are ranked using four evidence components:
+Environmental forcing in the seeded deployment is representative prototype data. The codebase also contains a HYCOM adapter for real historical environmental-data integration.
 
-| Component | Weight | Purpose |
-|---|---:|---|
-| **Proximity** | 35% | Distance from reconstructed spill origin |
-| **Trajectory Match** | 30% | Consistency between vessel movement and spill-origin geometry |
-| **Temporal Consistency** | 20% | Compatibility with the reconstructed spill time window |
-| **Behavioural Anomaly** | 15% | Supporting abnormal-behaviour evidence |
+## 🚢 AIS Attribution
 
-The resulting score is an **investigative prioritization signal**, not a legal conclusion.
+Candidate ranking uses an explainable weighted score:
 
----
+| Evidence | Weight |
+|---|---:|
+| Proximity | 35% |
+| Trajectory match | 30% |
+| Temporal consistency | 20% |
+| Behavioural evidence | 15% |
 
-## 🛰️ Satellite & SAR Validation
+The seeded SP-001 demo ranks **OCEAN STAR** highest at **96.21%**, followed by **SEA HORIZON (87.74%)** and **MARINE EXPRESS (75.63%)**. These seeded vessel trajectories are **representative demonstration data**, not historical AIS evidence for the Sentinel-1 scene.
 
-OCEANNOVA includes a real Sentinel-1A sample workflow for geospatial validation and classical segmentation benchmarking.
-
-The validation path covers:
-
-- Raster ingestion.
-- CRS validation and coordinate transformation.
-- Ground-truth mask analysis.
-- Spill area estimation from the reference mask.
-- Classical dark-region segmentation benchmark.
-- Quantitative comparison using IoU and Dice metrics.
-
-The current classical baseline is intentionally treated as a benchmark rather than the final production model. This provides a measurable starting point for future deep-learning segmentation models.
-
----
-
-## 🔬 Look-Alike Validation
-
-SAR imagery can contain dark regions that are not oil, creating an important false-positive problem.
-
-The prototype therefore includes:
-
-- Geometric features.
-- Radiometric contrast features.
-- Edge-gradient features.
-- Environmental rule checks.
-- Random Forest classification scaffolding.
-
-The current Random Forest baseline uses **synthetic feature vectors** and is explicitly not presented as a production classifier. Real multi-source training and validation are part of the next development phase.
-
----
-
-## 📡 AIS Investigation
-
-The AIS module reconstructs vessel movement around the estimated origin window and applies explainable ranking logic.
-
-The prototype supports:
-
-- Vessel trajectory reconstruction.
-- Haversine distance calculation.
-- Spatial candidate filtering.
-- Temporal consistency scoring.
-- Trajectory matching.
-- Behavioural evidence.
-- Weighted attribution scoring.
-- Ranked candidate output.
-
-The seeded demonstration contains **four vessels**, including an intentionally irrelevant vessel that is filtered from the final candidate ranking.
-
----
+The repository includes adapters for NOAA MarineCadastre AIS and HYCOM data so the same investigation architecture can consume real external datasets when supplied.
 
 ## 🗺️ GIS Dashboard
 
-The frontend provides an event-level investigation view with:
+The deployed interface shows:
 
-- India-wide maritime overview.
-- Spill location and characterization.
-- Probable origin marker.
-- Origin uncertainty radius.
-- Backward and forward drift paths.
-- Historic AIS tracks.
-- Ranked vessel markers.
-- Candidate evidence panels.
-- Traffic filtering summary.
-- Investigation workflow summary.
+- Real AI spill footprint
+- Spill area and confidence
+- Probable origin and uncertainty radius
+- Backward and forward drift paths
+- AIS trajectories and ranked candidates
+- Evidence/provenance status
+- Traffic filtering summary
+- Explainable candidate scoring
 
-The interface is designed for rapid investigation rather than simply displaying raw data.
+## 🏗️ Architecture
 
----
+```text
+                OCEANNOVA
+                    │
+       ┌────────────┴────────────┐
+       │                         │
+   Data / AI                Application
+       │                         │
+ Sentinel-1 SAR          React + Leaflet
+ Segmentation             GIS Dashboard
+ Look-alikes                    │
+ Drift / Origin              FastAPI
+ AIS scoring                    │
+       └────────────── PostgreSQL + PostGIS
+
+Deployment: GitHub → Vercel (frontend) + Render (API) + Supabase (PostGIS)
+```
 
 ## 🧰 Technology Stack
 
-### Frontend
-
-- React
-- TypeScript
-- Vite
-- Leaflet
-- React Leaflet
-- CSS
-
-### Backend
-
-- Python
-- FastAPI
-- SQLAlchemy
-- GeoAlchemy2
-- Shapely
-- PostgreSQL
-- PostGIS
-
-### AI / Data Processing
-
-- Python scientific stack
-- Raster/SAR preprocessing
-- Classical segmentation baseline
-- Random Forest look-alike baseline
-- Drift simulation and hindcasting
-- AIS trajectory analytics
-
-### Infrastructure
-
-- GitHub
-- Vercel
-- Render
-- Supabase
-- GitHub Actions
-
----
+**Frontend:** React, TypeScript, Vite, Leaflet, React Leaflet, CSS  
+**Backend:** Python, FastAPI, SQLAlchemy, GeoAlchemy2, Shapely  
+**AI/Data:** Sentinel-1 SAR processing, U-Net inference, look-alike validation, drift modelling, AIS analytics  
+**Database:** PostgreSQL + PostGIS  
+**Deployment:** Vercel, Render, Supabase, GitHub Actions
 
 ## 📁 Repository Structure
 
 ```text
 OCEANNOVA/
-├── .github/
-│   └── workflows/          # CI / build checks
-├── ai-model/                # Segmentation inference & validation
-├── ais/                     # AIS scoring & vessel attribution
-├── backend/                 # FastAPI + PostgreSQL/PostGIS API
-│   └── app/
-├── data/                    # Local/external data policy & outputs
-├── docs/                    # Architecture, research & demo guides
-├── drift/                   # Drift simulation & origin reconstruction
-├── frontend/                # React + TypeScript + Leaflet UI
-├── lookalike/               # Spill look-alike validation
-├── satellite/               # Sentinel-1 preprocessing
-├── tests/                   # Test suite
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-└── requirements.txt
+├── ai-model/          # Spill segmentation and evaluation
+├── ais/               # AIS matching and attribution
+├── backend/           # FastAPI + PostGIS API
+├── data/              # Data policies and processed evidence
+├── docs/              # Architecture and SIH demo documentation
+├── drift/             # Drift and origin modelling
+├── frontend/          # React + Leaflet dashboard
+├── lookalike/         # Look-alike validation
+├── satellite/         # SAR preprocessing
+└── tests/              # Automated tests
 ```
 
----
-
 ## 💻 Local Development
-
-### 1. Clone
 
 ```bash
 git clone https://github.com/Deepanshu779/OCEANNOVA.git
 cd OCEANNOVA
-```
 
-### 2. Backend
-
-```powershell
+# Backend
 cd backend
 python seed_data.py
 python -m uvicorn app.main:app --reload
-```
 
-The API runs locally at:
-
-```text
-http://127.0.0.1:8000
-```
-
-### 3. Frontend
-
-Open a second terminal:
-
-```powershell
+# Frontend (second terminal)
 cd frontend
 npm install
 npm run dev
 ```
 
-Open the Vite URL displayed in the terminal.
-
-### 4. API Configuration
-
-For production or a deployed frontend, set:
+For the deployed frontend:
 
 ```env
 VITE_API_BASE_URL=https://oceannova-api.onrender.com/api/v1
 ```
 
-Do not commit database credentials or other secrets to GitHub.
+Never commit database passwords, API keys or provider credentials.
 
----
-
-## 🔌 API Highlights
-
-### Health
+## 🔌 API
 
 ```http
 GET /api/v1/health
-```
-
-### Investigation
-
-```http
 GET /api/v1/spills/{spill_id}/investigation
 ```
 
-Example:
+The investigation endpoint returns spill characterization, origin, drift points, traffic filtering, ranked vessels and vessel tracks.
 
-```http
-GET /api/v1/spills/SP-001/investigation
-```
+## 🔬 Current Evidence Status
 
-The investigation response combines spill characterization, probable origin, drift points, traffic filtering statistics, vessel attribution and historical vessel tracks.
+| Source / module | Status | Meaning |
+|---|---|---|
+| Sentinel-1 SAR scene | **REAL** | Real test scene and reference mask |
+| U-Net segmentation validation | **REAL** | Evaluated on the real test scene |
+| Spill GeoJSON | **REAL DERIVED** | Exported from the AI prediction mask |
+| Drift forcing in deployed seed | **DEMO** | Representative prototype forcing |
+| AIS identities/tracks in deployed seed | **DEMO** | Representative trajectories |
+| NOAA AIS adapter | **READY** | Real clipped CSV can be ingested |
+| HYCOM adapter | **READY** | Real historical forcing can be integrated |
 
----
-
-## 📊 Demo Scenario
-
-The current seeded **SP-001** scenario is an offshore India demonstration event.
-
-It is designed to show the complete investigation workflow:
-
-1. Detect and characterize a spill candidate.
-2. Reconstruct a probable origin.
-3. Hindcast the spill movement.
-4. Forecast future drift.
-5. Reconstruct relevant AIS traffic.
-6. Filter an irrelevant vessel.
-7. Rank the remaining candidates.
-8. Inspect evidence for an individual vessel.
-
-The demonstration data is clearly separated from real satellite validation data.
-
----
-
-## 📚 Data Sources & Research Direction
-
-The project is structured to support integration with authoritative maritime and Earth-observation sources, including:
-
-- Sentinel-1 SAR imagery.
-- Copernicus Sentinel data services.
-- Copernicus Marine oceanographic products.
-- MarineCadastre / AccessAIS datasets.
-- AISStream for real-time AIS integration.
-- Public oil-spill datasets containing oil, look-alike and no-oil samples.
-
-Large raster datasets and generated artifacts are intentionally excluded from the repository.
-
----
-
-## 🛡️ Responsible Use & Limitations
-
-OCEANNOVA is a **decision-support prototype**. The current implementation has clear boundaries:
-
-- The included Sentinel-1A sample is used for real-data geospatial validation and benchmarking.
-- The current look-alike Random Forest baseline uses synthetic training features.
-- The seeded AIS vessel identities and trajectories are demonstration data.
-- Live AIS, live ocean/weather feeds and production deep-learning model weights are not yet the default deployed pipeline.
-- Some demo characterization fields are seeded values used to exercise the complete dashboard workflow.
-- Attribution scores should be corroborated by qualified investigators before operational or legal action.
-
-These boundaries are intentionally documented so that prototype results are not presented as operational evidence.
-
----
+This separation is intentional: the demo proves the architecture without overstating prototype data as operational evidence.
 
 ## 🔮 Roadmap
 
-### Phase 1 — Prototype ✅
-
-- [x] End-to-end investigation architecture
-- [x] Sentinel-1 sample validation
-- [x] SAR preprocessing baseline
-- [x] Look-alike validation scaffolding
-- [x] Drift hindcast/forecast engine
-- [x] AIS attribution scoring
+- [x] End-to-end detection → trace → attribution architecture
+- [x] Real Sentinel-1 validation workflow
+- [x] U-Net inference and GeoJSON export
+- [x] Drift hindcast/forecast prototype
+- [x] Explainable AIS attribution
 - [x] FastAPI + PostGIS backend
-- [x] GIS dashboard
-- [x] Cloud deployment
+- [x] Deployed GIS dashboard
+- [ ] Real NOAA AIS event ingestion into the deployed case
+- [ ] Real HYCOM forcing wired into the deployed case
+- [ ] Multi-scene satellite ingestion and automated alerts
+- [ ] Production-scale look-alike training and uncertainty-aware ensembles
 
-### Phase 2 — Production Data Integration
+## ⚠️ Responsible Use
 
-- [ ] Multi-scene Sentinel-1 ingestion
-- [ ] Production oil-spill segmentation model
-- [ ] Real look-alike training and validation
-- [ ] Live/historical AIS provider integration
-- [ ] Live ocean-current and weather feeds
-- [ ] Automated event ingestion
-
-### Phase 3 — Operational Intelligence
-
-- [ ] Near-real-time satellite monitoring
-- [ ] Multi-model drift ensembles
-- [ ] Uncertainty-aware origin estimation
-- [ ] Automated alerts
-- [ ] Evidence provenance and audit trails
-- [ ] Scalable multi-event investigation
-- [ ] Explainable AI reporting
-
----
+OCEANNOVA is an investigative decision-support prototype. A high attribution score means a vessel is a high-priority candidate under the available evidence; it does **not** prove that the vessel caused the spill. Operational or legal decisions require independent corroboration and authoritative data.
 
 ## 👥 Team OCEANNOVA
 
 **OCEANNOVA — Detect. Trace. Protect.**
-
-Built for **Smart India Hackathon 2026 — PS 26143**.
-
-### Team Contributions
 
 - **Deepanshu** — Full-Stack, GIS Dashboard & System Integration
 - **Harshit Raj** — AI/ML, Oil-Spill Detection & Segmentation
@@ -507,18 +228,6 @@ Built for **Smart India Hackathon 2026 — PS 26143**.
 - **Lakshay** — Satellite/SAR Data & Preprocessing
 - **Ishika** — Ocean Drift & Spill-Origin Prediction
 
----
-
 ## 📄 License
 
-This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
-
----
-
-<div align="center">
-
-### 🌊 OCEANNOVA
-
-**Detect. Trace. Protect.**
-
-</div>
+MIT License. See [LICENSE](LICENSE).
