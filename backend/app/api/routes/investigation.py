@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from geoalchemy2.shape import to_shape
@@ -137,9 +139,16 @@ def get_investigation(spill_id: str, db: Session = Depends(get_db)):
         age_status=(
             "estimated_from_observation_timestamp"
             if spill.estimated_age_hours is not None
-            else "not_available"
+            else "not_available_insufficient_temporal_observations"
         ),
     )
+
+    detection_time = spill.acquisition_time.isoformat() if spill.acquisition_time else None
+    origin_time = None
+    if spill.acquisition_time and drift_points:
+        earliest_hindcast = min(p.hours_from_detection for p in drift_points)
+        if earliest_hindcast < 0:
+            origin_time = (spill.acquisition_time + timedelta(hours=earliest_hindcast)).isoformat()
 
     traffic = TrafficSummaryResponse(
         total_vessels_considered=total_vessels,
@@ -153,6 +162,8 @@ def get_investigation(spill_id: str, db: Session = Depends(get_db)):
         confidence=spill.confidence,
         area_km2=spill.area_km2,
         centroid={"lat": point.y, "lon": point.x},
+        detection_time=detection_time,
+        origin_time=origin_time,
         characterization=characterization,
         origin=origin,
         drift=drift,
