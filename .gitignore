@@ -1,11 +1,12 @@
-# Byte-compiled / optimized / DLL files
+# Byte-compiled / optimized Python files
 __pycache__/
 *.py[cod]
 *$py.class
 
 # Environments
 .env
-.venv
+*.env
+.venv/
 env/
 venv/
 ENV/
@@ -17,30 +18,30 @@ build/
 .next/
 
 # Jupyter Notebook checkpoints
-.ipynb_checkpoints
+.ipynb_checkpoints/
 
 # Logs and databases
 *.log
 *.sqlite3
+*.db
 
 # OS generated
 .DS_Store
 Thumbs.db
 
-# Environment variables
-.env
-*.env
-
 # Python
 __pycache__/
 *.pyc
-venv/
-.venv/
 
-# Local database files
-*.db
-
-# Large datasets
-data/raw/
+# Generated/processed outputs (keep raw source data separately)
 data/processed/
-data/external/
+
+# Local runtime data
+data/real/ais/*.csv
+
+# Do NOT ignore the official raw Sentinel-1 dataset.
+# Use Git LFS for .tif files because GitHub's normal file limit is too small.
+!data/external/
+!data/external/Radar_data/
+!data/external/Radar_data/**/*.tif
+!data/external/Radar_data/**/*.TIF
