@@ -9,6 +9,12 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
   const topVessels = investigation.vessels.slice(0, 3);
   const confidence = investigation.confidence * 100;
   const best = topVessels[0];
+  const earliestHindcast = investigation.drift.length
+    ? Math.min(...investigation.drift.map((point) => point.hours_from_detection))
+    : 0;
+  const latestForecast = investigation.drift.length
+    ? Math.max(...investigation.drift.map((point) => point.hours_from_detection))
+    : 0;
 
   return (
     <aside className="sidebar">
@@ -24,7 +30,8 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
         <div className="metric"><span>Detected area</span><strong>{investigation.area_km2} km²</strong></div>
         <div className="metric"><span>Perimeter</span><strong>{investigation.characterization.perimeter_estimate_km ?? "N/A"} km</strong></div>
         <div className="metric"><span>Compactness</span><strong>{investigation.characterization.compactness_estimate ?? "N/A"}</strong></div>
-        <div className="metric"><span>Age estimate</span><strong>{investigation.characterization.estimated_age_hours != null ? `${investigation.characterization.estimated_age_hours} h` : "Not available"}</strong></div>
+        <div className="metric"><span>Spill age</span><strong>{investigation.characterization.estimated_age_hours != null ? `${investigation.characterization.estimated_age_hours} h` : "Not estimated"}</strong></div>
+        <div className="metric"><span>Age status</span><strong>{investigation.characterization.estimated_age_hours != null ? "Estimated" : "Insufficient observations"}</strong></div>
         {investigation.origin && <div className="metric"><span>Origin uncertainty</span><strong>±{investigation.origin.uncertainty_km} km</strong></div>}
       </div>
 
@@ -73,20 +80,23 @@ export default function Sidebar({ investigation, onSelectVessel }: SidebarProps)
         <div className="metric"><span>Filtered irrelevant</span><strong>{investigation.traffic.filtered_irrelevant}</strong></div>
         <div className="metric"><span>Ranked candidates</span><strong>{investigation.traffic.ranked_candidates}</strong></div>
         <p className="micro-copy">{investigation.traffic.filtering_rule}</p>
+        <p className="micro-copy">AIS source: representative demonstration trajectories; real historical AIS can be supplied through the same pipeline.</p>
       </div>
 
       <div className="section">
         <div className="section-heading"><h3>Drift Analysis</h3><span>{investigation.drift.length} points</span></div>
         <div className="metric"><span>Origin method</span><strong>{investigation.origin?.method ?? "Unavailable"}</strong></div>
-        <div className="metric"><span>Coverage</span><strong>{investigation.drift.some((p) => p.hours_from_detection < 0) ? "Backward + " : ""}{investigation.drift.some((p) => p.hours_from_detection > 0) ? "Forward" : "Observation"}</strong></div>
-        <p className="micro-copy">Environmental inputs are prototype demonstration values for this case.</p>
+        <div className="metric"><span>Origin window</span><strong>{earliestHindcast < 0 ? `T${earliestHindcast} h` : "Observation"}</strong></div>
+        <div className="metric"><span>Detection reference</span><strong>T0</strong></div>
+        <div className="metric"><span>Forecast horizon</span><strong>{latestForecast > 0 ? `+${latestForecast} h` : "N/A"}</strong></div>
+        <p className="micro-copy">Origin time is reconstructed from the earliest backward-hindcast point relative to the SAR detection time. Environmental inputs are prototype demonstration values for this case.</p>
       </div>
 
       <div className="section investigation-summary">
         <div className="section-heading"><h3>Investigation Pipeline</h3><span>SIH flow</span></div>
         <div className="summary-step"><span className="summary-number">01</span><div><strong>DETECT</strong><p>SAR + U-Net identifies dark slick candidates</p></div></div>
         <div className="summary-step"><span className="summary-number">02</span><div><strong>CHARACTERIZE</strong><p>Area, perimeter, compactness and confidence</p></div></div>
-        <div className="summary-step"><span className="summary-number">03</span><div><strong>TRACE</strong><p>Drift hindcast reconstructs probable origin</p></div></div>
+        <div className="summary-step"><span className="summary-number">03</span><div><strong>TRACE</strong><p>Drift hindcast reconstructs probable origin point + time</p></div></div>
         <div className="summary-step"><span className="summary-number">04</span><div><strong>CORRELATE</strong><p>AIS traffic filtered around the origin window</p></div></div>
         <div className="summary-step"><span className="summary-number">05</span><div><strong>RANK</strong><p>Explainable multi-factor candidate scoring</p></div></div>
       </div>
