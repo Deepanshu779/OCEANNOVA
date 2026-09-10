@@ -1,0 +1,72 @@
+{
+  "incident_id": "SP-001",
+  "title": "Gulf of Mexico Sentinel-1 oil-spill investigation",
+  "evidence": {
+    "satellite": {
+      "status": "REAL",
+      "source": "Sentinel-1A",
+      "scene": "2018_09_26.tif",
+      "crs": "EPSG:32616"
+    },
+    "ai_detection": {
+      "status": "REAL",
+      "method": "U-Net segmentation + radiometric filtering",
+      "test_scene_metrics": {
+        "iou_percent": 57.11,
+        "dice_percent": 72.70,
+        "precision_percent": 93.49,
+        "recall_percent": 59.48
+      },
+      "predicted_area_km2": 27.0378,
+      "mean_predicted_confidence_percent": 95.94
+    },
+    "drift": {
+      "status": "DEMO",
+      "method": "backward drift hindcast + forward forecast",
+      "probable_origin": {
+        "latitude": 28.852338,
+        "longitude": -89.153024,
+        "uncertainty_km": 8.5
+      },
+      "note": "Seeded deployment uses representative environmental forcing."
+    },
+    "ais": {
+      "status": "DEMO",
+      "provider_path": "NOAA MarineCadastre adapter",
+      "note": "Seeded vessel identities and trajectories are representative demonstration data."
+    }
+  },
+  "attribution": {
+    "method": "explainable weighted investigative score",
+    "weights": {
+      "proximity": 0.35,
+      "trajectory_match": 0.30,
+      "temporal_consistency": 0.20,
+      "behavioral_evidence": 0.15
+    },
+    "ranked_candidates": [
+      {
+        "rank": 1,
+        "vessel": "OCEAN STAR",
+        "mmsi": "419001234",
+        "score_percent": 96.21,
+        "distance_km": 0.84
+      },
+      {
+        "rank": 2,
+        "vessel": "SEA HORIZON",
+        "mmsi": "419005678",
+        "score_percent": 87.74,
+        "distance_km": 0.74
+      },
+      {
+        "rank": 3,
+        "vessel": "MARINE EXPRESS",
+        "mmsi": "419009876",
+        "score_percent": 75.63,
+        "distance_km": 3.09
+      }
+    ],
+    "disclaimer": "Attribution is investigative decision support and does not establish legal responsibility."
+  }
+}
