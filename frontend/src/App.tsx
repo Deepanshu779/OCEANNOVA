@@ -42,6 +42,11 @@ function App() {
     [scenes, datasetQuery]
   );
 
+  const getInvestigationId = (scene: DatasetScene) => {
+    const index = scenes.findIndex((item) => item.split === scene.split && item.scene_id === scene.scene_id);
+    return index >= 0 ? `SP-${String(index + 1).padStart(3, "0")}` : "SP-001";
+  };
+
   const openDatasets = async () => {
     setShowDatasets(true);
     if (scenes.length) return;
@@ -56,11 +61,7 @@ function App() {
   };
 
   const selectScene = (scene: DatasetScene) => {
-    // The inventory is now sourced from the actual Radar_data folder.
-    // SP-001 remains the only completed end-to-end investigation until
-    // its corresponding scene has been processed into an investigation record.
-    const index = scenes.findIndex((item) => item.scene_id === scene.scene_id);
-    setSelectedScene(`SP-${String(index + 1).padStart(3, "0")}`);
+    setSelectedScene(getInvestigationId(scene));
     setShowDatasets(false);
     setError(null);
   };
@@ -118,8 +119,8 @@ function App() {
             </div>
             <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>{filteredScenes.length} / {scenes.length || 23} scenes</span></div>
             <div className="dataset-grid">
-              {filteredScenes.map((scene, index) => {
-                const investigationId = `SP-${String(index + 1).padStart(3, "0")}`;
+              {filteredScenes.map((scene) => {
+                const investigationId = getInvestigationId(scene);
                 const complete = investigationId === "SP-001";
                 return (
                   <button key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === investigationId ? "selected" : ""} ${complete ? "active" : ""}`} onClick={() => selectScene(scene)}>
