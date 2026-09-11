@@ -17,7 +17,6 @@ import { getSpillGeoJSON, type Investigation, type Vessel } from "../services/ap
 
 interface MapViewProps {
   investigation: Investigation;
-  selectedVessel?: Vessel | null;
 }
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
@@ -29,25 +28,33 @@ L.Icon.Default.mergeOptions({
 
 const spillIcon = L.divIcon({ className: "spill-marker", html: `<div class="spill-marker-inner"></div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
 const originIcon = L.divIcon({ className: "origin-marker", html: `<div class="origin-marker-inner"></div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
-
 const vesselIcon = L.divIcon({
   className: "vessel-ship-marker",
-  html: `<div class="vessel-ship-icon" aria-label="Vessel">🚢</div>`,
+  html: `<div class="vessel-ship-icon" aria-label="Representative vessel candidate">🚢</div>`,
   iconSize: [40, 40],
   iconAnchor: [20, 20],
   popupAnchor: [0, -18],
 });
 
+function investigationPoints(investigation: Investigation, includeVessels = false): [number, number][] {
+  const points: [number, number][] = [[investigation.centroid.lat, investigation.centroid.lon]];
+  if (investigation.origin) points.push([investigation.origin.latitude, investigation.origin.longitude]);
+  investigation.drift.forEach((point) => points.push([point.latitude, point.longitude]));
+  if (includeVessels) {
+    investigation.vessels.forEach((vessel) => {
+      if (vessel.latitude != null && vessel.longitude != null) points.push([vessel.latitude, vessel.longitude]);
+    });
+  }
+  return points;
+}
+
 function IncidentOverview({ investigation }: { investigation: Investigation }) {
   const map = useMap();
   useEffect(() => {
-    const points: [number, number][] = [[investigation.centroid.lat, investigation.centroid.lon]];
-    if (investigation.origin) points.push([investigation.origin.latitude, investigation.origin.longitude]);
-    investigation.drift.forEach((p) => points.push([p.latitude, p.longitude]));
-    investigation.vessels.forEach((v) => {
-      if (v.latitude != null && v.longitude != null) points.push([v.latitude, v.longitude]);
-    });
-    map.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 9, animate: false });
+    // Keep the automatic camera focused on the spill evidence itself.
+    // Representative vessels can be far away and should never zoom the case out.
+    const points = investigationPoints(investigation);
+    map.fitBounds(L.latLngBounds(points), { padding: [45, 45], maxZoom: 10, minZoom: 6, animate: false });
   }, [map, investigation]);
   return null;
 }
@@ -55,32 +62,29 @@ function IncidentOverview({ investigation }: { investigation: Investigation }) {
 function FocusInvestigationButton({ investigation }: { investigation: Investigation }) {
   const map = useMap();
   const focusInvestigation = () => {
-    const points: [number, number][] = [[investigation.centroid.lat, investigation.centroid.lon]];
-    if (investigation.origin) points.push([investigation.origin.latitude, investigation.origin.longitude]);
-    investigation.drift.forEach((p) => points.push([p.latitude, p.longitude]));
-    investigation.vessels.forEach((v) => {
-      if (v.latitude != null && v.longitude != null) points.push([v.latitude, v.longitude]);
-    });
-    map.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 10, animate: true });
+    const points = investigationPoints(investigation);
+    map.fitBounds(L.latLngBounds(points), { padding: [70, 70], maxZoom: 11, minZoom: 6, animate: true });
   };
-  return <button type="button" className="map-action-button" onClick={focusInvestigation}>Focus Investigation</button>;
+  return <button type="button" className="map-action-button" onClick={focusInvestigation}>Focus spill</button>;
 }
 
 function vesselPopup(vessel: Vessel) {
   const score = vessel.attribution_score.toFixed(1);
   const distance = vessel.distance_km == null ? "—" : `${vessel.distance_km.toFixed(2)} km`;
   const time = vessel.time_difference_hours == null ? "—" : `${vessel.time_difference_hours >= 0 ? "+" : ""}${vessel.time_difference_hours.toFixed(1)} h`;
+  const representative = vessel.relevance !== "filtered";
   return (
-    <>
-      <strong>{vessel.vessel_name ?? vessel.mmsi}</strong><br />
-      MMSI: {vessel.mmsi}<br />
-      Attribution score: {score}%<br />
-      Distance to origin: {distance}<br />
-      Time difference: {time}<br />
-      Speed: {vessel.speed_knots == null ? "—" : `${vessel.speed_knots.toFixed(1)} kn`}<br />
-      Course: {vessel.course == null ? "—" : `${vessel.course.toFixed(0)}°`}<br />
-      <span>{vessel.relevance === "filtered" ? "Filtered traffic" : "Representative candidate"}</span>
-    </>
+    <div className="vessel-popup">
+      <strong>{vessel.vessel_name ?? vessel.mmsi}</strong>
+      <span className="popup-provenance">{representative ? "REPRESENTATIVE DEMO CANDIDATE" : "FILTERED AIS TRAFFIC"}</span>
+      <div>MMSI: {vessel.mmsi}</div>
+      <div>Attribution score: {score}%</div>
+      <div>Distance to origin: {distance}</div>
+      <div>Time difference: {time}</div>
+      <div>Speed: {vessel.speed_knots == null ? "—" : `${vessel.speed_knots.toFixed(1)} kn`}</div>
+      <div>Course: {vessel.course == null ? "—" : `${vessel.course.toFixed(0)}°`}</div>
+      {representative && <small>No historical AIS claim — corroboration required.</small>}
+    </div>
   );
 }
 
@@ -111,33 +115,33 @@ export default function MapView({ investigation }: MapViewProps) {
       {spillGeoJson && (
         <GeoJSON
           data={spillGeoJson}
-          style={() => ({ color: "#ef4444", weight: 2, opacity: 0.95, fillColor: "#ef4444", fillOpacity: 0.24 })}
+          style={() => ({ color: "#ef4444", weight: 2.5, opacity: 0.95, fillColor: "#ef4444", fillOpacity: 0.24 })}
         >
           <Popup>
-            <strong>Real Radar_data Spill Footprint</strong><br />
-            Source: Sentinel-1 SAR<br />
+            <strong>Processed spill footprint</strong><br />
+            Evidence: Sentinel-1 SAR<br />
             Method: U-Net + radiometric/look-alike filtering<br />
-            Area: {investigation.area_km2} km²<br />
+            Predicted area: {investigation.area_km2} km²<br />
             Mean AI confidence: {(investigation.confidence * 100).toFixed(1)}%
           </Popup>
         </GeoJSON>
       )}
 
-      <div className="map-overview-label">GULF OF MEXICO • REAL RADAR_DATA SCENE</div>
+      <div className="map-overview-label">GULF OF MEXICO • RADAR EVIDENCE</div>
       <div className="map-hero-card">
         <div className="map-hero-kicker">REAL RADAR INVESTIGATION</div>
         <strong>{investigation.spill_id} • {investigation.area_km2} km²</strong>
         <span>Sentinel-1 SAR → U-Net → characterization</span>
       </div>
       <div className="map-legend">
-        <div className="legend-title">MAP LEGEND</div>
-        <div><span className="legend-footprint" /> Real processed spill footprint</div>
+        <div className="legend-title">EVIDENCE LEGEND</div>
+        <div><span className="legend-footprint" /> Processed spill footprint</div>
         <div><span className="legend-dot legend-origin" /> Origin analysis when available</div>
         <div><span className="legend-line" /> Drift when available</div>
-        <div><span className="legend-vessel-icon">🚢</span> Vessel candidate</div>
+        <div><span className="legend-vessel-icon">🚢</span> Representative candidate</div>
       </div>
       <div className="map-status-card">
-        <strong>● RADAR INVESTIGATION ACTIVE</strong>
+        <strong>● RADAR EVIDENCE ACTIVE</strong>
         <span>DETECT → CHARACTERIZE</span>
       </div>
 
@@ -146,7 +150,7 @@ export default function MapView({ investigation }: MapViewProps) {
           <strong>{investigation.spill_id}</strong><br />
           Real processed Radar_data candidate<br />
           Confidence: {(investigation.confidence * 100).toFixed(1)}%<br />
-          Area: {investigation.area_km2} km²<br />
+          Predicted area: {investigation.area_km2} km²<br />
           Age: Not available from a single scene
         </Popup>
       </Marker>
