@@ -13,6 +13,7 @@ function App() {
   const [showDatasets, setShowDatasets] = useState(false);
   const [datasetQuery, setDatasetQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [sceneLoading, setSceneLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [datasetLoading, setDatasetLoading] = useState(false);
 
@@ -60,22 +61,33 @@ function App() {
     }
   };
 
-  const selectScene = (scene: DatasetScene) => {
-    setSelectedScene(getInvestigationId(scene));
+  const selectScene = async (scene: DatasetScene) => {
+    const investigationId = getInvestigationId(scene);
+    setSelectedScene(investigationId);
     setShowDatasets(false);
     setError(null);
+    setSceneLoading(true);
+    try {
+      const data = await getInvestigation(investigationId);
+      setInvestigation(data);
+      setSelectedVessel(data.vessels[0] ?? null);
+    } catch (err) {
+      console.error(err);
+      setError(`Unable to load processed Radar_data result for ${investigationId}.`);
+    } finally {
+      setSceneLoading(false);
+    }
   };
 
   if (loading) {
-    return <div className="loading-screen"><div><div className="loading-mark">O</div><strong>Loading OCEANNOVA</strong><span>Connecting to investigation API…</span></div></div>;
+    return <div className="loading-screen"><div><div className="loading-mark">O</div><strong>Loading OCEANNOVA</strong><span>Connecting to real Radar_data investigation API…</span></div></div>;
   }
 
   if (error || !investigation) {
     return <div className="loading-screen"><div><div className="loading-mark">!</div><strong>{error ?? "No investigation data available."}</strong><span>Start the FastAPI backend and refresh the dashboard.</span></div></div>;
   }
 
-  const isFullDemo = selectedScene === "SP-001";
-  const datasetCount = scenes.length || 23;
+  const datasetCount = scenes.length;
 
   return (
     <div className="app">
@@ -86,26 +98,23 @@ function App() {
         </div>
         <div className="topbar-meta">
           <span className="live-dot" /><span>SYSTEM ONLINE</span>
-          <button className="dataset-button" onClick={openDatasets}>DATASET <b>{datasetCount}</b></button>
+          <button className="dataset-button" onClick={openDatasets}>REAL RADAR DATA <b>{datasetCount}</b></button>
           <span className="topbar-divider" /><span>SIH26143</span>
         </div>
       </header>
 
-      {!isFullDemo && (
-        <div className="scene-banner">
-          <strong>{selectedScene}</strong>
-          <span>Source scene selected • inventory verified from local Radar_data</span>
-          <button onClick={() => setSelectedScene("SP-001")}>Return to SP-001 demo</button>
-        </div>
-      )}
+      <div className="scene-banner">
+        <strong>{selectedScene}</strong>
+        <span>{sceneLoading ? "Loading processed Radar_data result…" : "Real processed Radar_data scene • U-Net + post-processing"}</span>
+      </div>
 
       <main className="dashboard">
         <Sidebar investigation={investigation} onSelectVessel={setSelectedVessel} />
         <section className="map-container">
           <MapView investigation={investigation} selectedVessel={selectedVessel} />
           <div className="map-status-card">
-            <strong>{selectedScene} • Investigation Map</strong>
-            <span>{isFullDemo ? "DETECT → TRACE → CORRELATE → RANK" : "SCENE SELECTED → PROCESSING REQUIRED"}</span>
+            <strong>{selectedScene} • Real Radar Investigation</strong>
+            <span>DETECT → CHARACTERIZE • AIS/DRIFT NOT LOADED</span>
           </div>
         </section>
       </main>
@@ -114,25 +123,24 @@ function App() {
         <div className="dataset-overlay" onClick={() => setShowDatasets(false)}>
           <section className="dataset-panel" onClick={(event) => event.stopPropagation()}>
             <div className="dataset-header">
-              <div><span className="eyebrow">SATELLITE DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>{datasetLoading ? "Reading Radar_data from backend…" : `${scenes.length || 23} scenes discovered from the Radar_data folder.`}</p></div>
+              <div><span className="eyebrow">REAL RADAR_DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>{datasetLoading ? "Reading Radar_data from backend…" : `${scenes.length} processed scenes discovered from the Radar_data folder.`}</p></div>
               <button className="dataset-close" onClick={() => setShowDatasets(false)}>×</button>
             </div>
-            <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>{filteredScenes.length} / {scenes.length || 23} scenes</span></div>
+            <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>{filteredScenes.length} / {scenes.length} scenes</span></div>
             <div className="dataset-grid">
               {filteredScenes.map((scene) => {
                 const investigationId = getInvestigationId(scene);
-                const complete = investigationId === "SP-001";
                 return (
-                  <button key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === investigationId ? "selected" : ""} ${complete ? "active" : ""}`} onClick={() => selectScene(scene)}>
-                    <div className="dataset-card-top"><strong>{investigationId}</strong><span>{complete ? "FULL DEMO" : scene.has_mask ? "RAW + MASK" : "IMAGE ONLY"}</span></div>
+                  <button key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === investigationId ? "selected active" : ""}`} onClick={() => selectScene(scene)}>
+                    <div className="dataset-card-top"><strong>{investigationId}</strong><span>{scene.has_mask ? "REAL + MASK" : "REAL IMAGE"}</span></div>
                     <div className="dataset-date">{scene.scene_id}</div><small>{scene.file}</small><small>{scene.split.toUpperCase()} • Sentinel-1A GRD VV</small>
-                    <em>{complete ? "Open full investigation →" : "Select source scene →"}</em>
+                    <em>Open real processed investigation →</em>
                   </button>
                 );
               })}
-              {!datasetLoading && scenes.length === 0 && <div className="dataset-empty">No Radar_data scenes are visible to the running backend. The local folder must be present in the backend runtime.</div>}
+              {!datasetLoading && scenes.length === 0 && <div className="dataset-empty">No Radar_data scenes are visible to the running backend.</div>}
             </div>
-            <footer className="dataset-footer">SOURCE: Zenodo Oil Spill Segmentation • Inventory is read from the actual backend Radar_data directory; only processed scenes expose a full investigation.</footer>
+            <footer className="dataset-footer">SOURCE: local Radar_data • processed U-Net segmentation, filtering, characterization and GeoJSON outputs. No synthetic AIS or ocean forcing is used in this dataset view.</footer>
           </section>
         </div>
       )}
