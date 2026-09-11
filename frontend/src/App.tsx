@@ -41,6 +41,22 @@ const visualPolish = `
   @media (max-width: 760px) { .app-nav { display: none; } .topbar { padding: 0 18px !important; } .top-links button { display: none; } .metric-grid { grid-template-columns: repeat(2, 1fr) !important; } .bottom-grid { grid-template-columns: 1fr !important; } }
 `;
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function retryRequest<T>(request: () => Promise<T>, attempts = 8): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await request();
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts - 1) break;
+      await sleep(Math.min(3000 + attempt * 1000, 8000));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error("Backend request failed");
+}
+
 function App() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [selectedScene, setSelectedScene] = useState("SP-001");
@@ -53,23 +69,24 @@ function App() {
   const [datasetLoading, setDatasetLoading] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     async function loadDashboard() {
       try {
         setError(null);
-        const [data, inventory] = await Promise.all([
-          getInvestigation("SP-001"),
-          getDatasetScenes().catch(() => []),
-        ]);
+        const data = await retryRequest(() => getInvestigation("SP-001"));
+        const inventory = await retryRequest(() => getDatasetScenes()).catch(() => [] as DatasetScene[]);
+        if (cancelled) return;
         setInvestigation(data);
         setScenes(inventory);
       } catch (err) {
         console.error(err);
-        setError("Unable to connect to OCEANNOVA backend.");
+        if (!cancelled) setError("The investigation service is taking longer than expected. Please refresh once.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     loadDashboard();
+    return () => { cancelled = true; };
   }, []);
 
   const filteredScenes = useMemo(
@@ -86,7 +103,7 @@ function App() {
     setShowDatasets(true);
     if (scenes.length) return;
     setDatasetLoading(true);
-    try { setScenes(await getDatasetScenes()); }
+    try { setScenes(await retryRequest(() => getDatasetScenes())); }
     catch (err) { console.error(err); }
     finally { setDatasetLoading(false); }
   };
@@ -97,7 +114,7 @@ function App() {
     setShowDatasets(false);
     setError(null);
     setSceneLoading(true);
-    try { setInvestigation(await getInvestigation(investigationId)); }
+    try { setInvestigation(await retryRequest(() => getInvestigation(investigationId))); }
     catch (err) { console.error(err); setError(`Unable to load processed Radar_data result for ${investigationId}.`); }
     finally { setSceneLoading(false); }
   };
@@ -107,7 +124,7 @@ function App() {
   }
 
   if (error || !investigation) {
-    return <div className="loading-screen"><div><div className="loading-mark">!</div><strong>{error ?? "No investigation data available."}</strong><span>Check that the FastAPI service is running and refresh the dashboard.</span></div></div>;
+    return <div className="loading-screen"><div><div className="loading-mark">!</div><strong>{error ?? "No investigation data available."}</strong><span>The service may be waking up. Refresh if this screen remains for more than a minute.</span></div></div>;
   }
 
   const confidence = investigation.confidence * 100;
