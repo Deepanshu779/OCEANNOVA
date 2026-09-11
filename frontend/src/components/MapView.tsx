@@ -15,9 +15,7 @@ import { useEffect, useState } from "react";
 import type { GeoJsonObject } from "geojson";
 import { getSpillGeoJSON, type Investigation, type Vessel } from "../services/api";
 
-interface MapViewProps {
-  investigation: Investigation;
-}
+interface MapViewProps { investigation: Investigation; }
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -28,33 +26,20 @@ L.Icon.Default.mergeOptions({
 
 const spillIcon = L.divIcon({ className: "spill-marker", html: `<div class="spill-marker-inner"></div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
 const originIcon = L.divIcon({ className: "origin-marker", html: `<div class="origin-marker-inner"></div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
-const vesselIcon = L.divIcon({
-  className: "vessel-ship-marker",
-  html: `<div class="vessel-ship-icon" aria-label="Representative vessel candidate">🚢</div>`,
-  iconSize: [40, 40],
-  iconAnchor: [20, 20],
-  popupAnchor: [0, -18],
-});
+const vesselIcon = L.divIcon({ className: "vessel-ship-marker", html: `<div class="vessel-ship-icon" aria-label="Representative vessel candidate">🚢</div>`, iconSize: [40, 40], iconAnchor: [20, 20], popupAnchor: [0, -18] });
 
-function investigationPoints(investigation: Investigation, includeVessels = false): [number, number][] {
+function investigationPoints(investigation: Investigation): [number, number][] {
   const points: [number, number][] = [[investigation.centroid.lat, investigation.centroid.lon]];
   if (investigation.origin) points.push([investigation.origin.latitude, investigation.origin.longitude]);
   investigation.drift.forEach((point) => points.push([point.latitude, point.longitude]));
-  if (includeVessels) {
-    investigation.vessels.forEach((vessel) => {
-      if (vessel.latitude != null && vessel.longitude != null) points.push([vessel.latitude, vessel.longitude]);
-    });
-  }
   return points;
 }
 
 function IncidentOverview({ investigation }: { investigation: Investigation }) {
   const map = useMap();
   useEffect(() => {
-    // Keep the automatic camera focused on the spill evidence itself.
-    // Representative vessels can be far away and should never zoom the case out.
     const points = investigationPoints(investigation);
-    map.fitBounds(L.latLngBounds(points), { padding: [45, 45], maxZoom: 10, minZoom: 6, animate: false });
+    map.fitBounds(L.latLngBounds(points), { padding: [45, 45], maxZoom: 10, animate: false });
   }, [map, investigation]);
   return null;
 }
@@ -63,7 +48,7 @@ function FocusInvestigationButton({ investigation }: { investigation: Investigat
   const map = useMap();
   const focusInvestigation = () => {
     const points = investigationPoints(investigation);
-    map.fitBounds(L.latLngBounds(points), { padding: [70, 70], maxZoom: 11, minZoom: 6, animate: true });
+    map.fitBounds(L.latLngBounds(points), { padding: [70, 70], maxZoom: 11, animate: true });
   };
   return <button type="button" className="map-action-button" onClick={focusInvestigation}>Focus spill</button>;
 }
@@ -77,12 +62,8 @@ function vesselPopup(vessel: Vessel) {
     <div className="vessel-popup">
       <strong>{vessel.vessel_name ?? vessel.mmsi}</strong>
       <span className="popup-provenance">{representative ? "REPRESENTATIVE DEMO CANDIDATE" : "FILTERED AIS TRAFFIC"}</span>
-      <div>MMSI: {vessel.mmsi}</div>
-      <div>Attribution score: {score}%</div>
-      <div>Distance to origin: {distance}</div>
-      <div>Time difference: {time}</div>
-      <div>Speed: {vessel.speed_knots == null ? "—" : `${vessel.speed_knots.toFixed(1)} kn`}</div>
-      <div>Course: {vessel.course == null ? "—" : `${vessel.course.toFixed(0)}°`}</div>
+      <div>MMSI: {vessel.mmsi}</div><div>Attribution score: {score}%</div><div>Distance to origin: {distance}</div><div>Time difference: {time}</div>
+      <div>Speed: {vessel.speed_knots == null ? "—" : `${vessel.speed_knots.toFixed(1)} kn`}</div><div>Course: {vessel.course == null ? "—" : `${vessel.course.toFixed(0)}°`}</div>
       {representative && <small>No historical AIS claim — corroboration required.</small>}
     </div>
   );
@@ -90,20 +71,15 @@ function vesselPopup(vessel: Vessel) {
 
 export default function MapView({ investigation }: MapViewProps) {
   const [spillGeoJson, setSpillGeoJson] = useState<GeoJsonObject | null>(null);
-
   useEffect(() => {
     let active = true;
     setSpillGeoJson(null);
-    getSpillGeoJSON(investigation.spill_id)
-      .then((data) => { if (active) setSpillGeoJson(data); })
-      .catch((error) => console.error("Radar_data spill footprint:", error));
+    getSpillGeoJSON(investigation.spill_id).then((data) => { if (active) setSpillGeoJson(data); }).catch((error) => console.error("Radar_data spill footprint:", error));
     return () => { active = false; };
   }, [investigation.spill_id]);
 
   const spillPosition: [number, number] = [investigation.centroid.lat, investigation.centroid.lon];
-  const originPosition: [number, number] | null = investigation.origin
-    ? [investigation.origin.latitude, investigation.origin.longitude]
-    : null;
+  const originPosition: [number, number] | null = investigation.origin ? [investigation.origin.latitude, investigation.origin.longitude] : null;
   const driftPath: [number, number][] = investigation.drift.map((point) => [point.latitude, point.longitude]);
 
   return (
@@ -111,67 +87,17 @@ export default function MapView({ investigation }: MapViewProps) {
       <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <IncidentOverview investigation={investigation} />
       <FocusInvestigationButton investigation={investigation} />
-
-      {spillGeoJson && (
-        <GeoJSON
-          data={spillGeoJson}
-          style={() => ({ color: "#ef4444", weight: 2.5, opacity: 0.95, fillColor: "#ef4444", fillOpacity: 0.24 })}
-        >
-          <Popup>
-            <strong>Processed spill footprint</strong><br />
-            Evidence: Sentinel-1 SAR<br />
-            Method: U-Net + radiometric/look-alike filtering<br />
-            Predicted area: {investigation.area_km2} km²<br />
-            Mean AI confidence: {(investigation.confidence * 100).toFixed(1)}%
-          </Popup>
-        </GeoJSON>
-      )}
-
+      {spillGeoJson && <GeoJSON data={spillGeoJson} style={() => ({ color: "#ef4444", weight: 2.5, opacity: 0.95, fillColor: "#ef4444", fillOpacity: 0.24 })}>
+        <Popup><strong>Processed spill footprint</strong><br />Evidence: Sentinel-1 SAR<br />Method: U-Net + radiometric/look-alike filtering<br />Predicted area: {investigation.area_km2} km²<br />Mean AI confidence: {(investigation.confidence * 100).toFixed(1)}%</Popup>
+      </GeoJSON>}
       <div className="map-overview-label">GULF OF MEXICO • RADAR EVIDENCE</div>
-      <div className="map-hero-card">
-        <div className="map-hero-kicker">REAL RADAR INVESTIGATION</div>
-        <strong>{investigation.spill_id} • {investigation.area_km2} km²</strong>
-        <span>Sentinel-1 SAR → U-Net → characterization</span>
-      </div>
-      <div className="map-legend">
-        <div className="legend-title">EVIDENCE LEGEND</div>
-        <div><span className="legend-footprint" /> Processed spill footprint</div>
-        <div><span className="legend-dot legend-origin" /> Origin analysis when available</div>
-        <div><span className="legend-line" /> Drift when available</div>
-        <div><span className="legend-vessel-icon">🚢</span> Representative candidate</div>
-      </div>
-      <div className="map-status-card">
-        <strong>● RADAR EVIDENCE ACTIVE</strong>
-        <span>DETECT → CHARACTERIZE</span>
-      </div>
-
-      <Marker position={spillPosition} icon={spillIcon}>
-        <Popup>
-          <strong>{investigation.spill_id}</strong><br />
-          Real processed Radar_data candidate<br />
-          Confidence: {(investigation.confidence * 100).toFixed(1)}%<br />
-          Predicted area: {investigation.area_km2} km²<br />
-          Age: Not available from a single scene
-        </Popup>
-      </Marker>
-
-      {originPosition && (
-        <>
-          <Circle center={originPosition} radius={investigation.origin!.uncertainty_km * 1000} pathOptions={{ fillOpacity: 0.12, weight: 2, dashArray: "7 6" }} />
-          <Marker position={originPosition} icon={originIcon} />
-        </>
-      )}
-
+      <div className="map-hero-card"><div className="map-hero-kicker">REAL RADAR INVESTIGATION</div><strong>{investigation.spill_id} • {investigation.area_km2} km²</strong><span>Sentinel-1 SAR → U-Net → characterization</span></div>
+      <div className="map-legend"><div className="legend-title">EVIDENCE LEGEND</div><div><span className="legend-footprint" /> Processed spill footprint</div><div><span className="legend-dot legend-origin" /> Origin analysis when available</div><div><span className="legend-line" /> Drift when available</div><div><span className="legend-vessel-icon">🚢</span> Representative candidate</div></div>
+      <div className="map-status-card"><strong>● RADAR EVIDENCE ACTIVE</strong><span>DETECT → CHARACTERIZE</span></div>
+      <Marker position={spillPosition} icon={spillIcon}><Popup><strong>{investigation.spill_id}</strong><br />Real processed Radar_data candidate<br />Confidence: {(investigation.confidence * 100).toFixed(1)}%<br />Predicted area: {investigation.area_km2} km²<br />Age: Not available from a single scene</Popup></Marker>
+      {originPosition && <><Circle center={originPosition} radius={investigation.origin!.uncertainty_km * 1000} pathOptions={{ fillOpacity: 0.12, weight: 2, dashArray: "7 6" }} /><Marker position={originPosition} icon={originIcon} /></>}
       {driftPath.length > 1 && <Polyline positions={driftPath} pathOptions={{ weight: 4, opacity: 0.9 }} />}
-
-      {investigation.vessels.map((vessel) => {
-        if (vessel.latitude == null || vessel.longitude == null) return null;
-        return (
-          <Marker key={vessel.mmsi} position={[vessel.latitude, vessel.longitude]} icon={vesselIcon}>
-            <Popup>{vesselPopup(vessel)}</Popup>
-          </Marker>
-        );
-      })}
+      {investigation.vessels.map((vessel) => vessel.latitude == null || vessel.longitude == null ? null : <Marker key={vessel.mmsi} position={[vessel.latitude, vessel.longitude]} icon={vesselIcon}><Popup>{vesselPopup(vessel)}</Popup></Marker>)}
     </MapContainer>
   );
 }
