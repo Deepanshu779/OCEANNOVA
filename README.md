@@ -6,12 +6,11 @@
 
 **Detect. Trace. Protect.**
 
-[![SIH 2026](https://img.shields.io/badge/SIH%202026-PS%2026143-blue?style=for-the-badge)](https://sih2026.vuce.in/ps/SIH26143)
 [![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge&logo=vercel)](https://oceannova-ochre.vercel.app/)
 [![Backend](https://img.shields.io/badge/Backend-Render-46E3B7?style=for-the-badge&logo=render)](https://oceannova-api.onrender.com)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-**Smart India Hackathon 2026 • PS 26143 • Team OCEANNOVA**
+**Team OCEANNOVA**
 
 </div>
 
@@ -143,12 +142,12 @@ OCEANNOVA/
 ├── ais/               # AIS matching and attribution
 ├── backend/           # FastAPI + PostGIS API
 ├── data/              # Data policies and processed evidence
-├── docs/              # Architecture and SIH demo documentation
+├── docs/              # Architecture and project documentation
 ├── drift/             # Drift and origin modelling
 ├── frontend/          # React + Leaflet dashboard
 ├── lookalike/         # Look-alike validation
 ├── satellite/         # SAR preprocessing
-└── tests/              # Automated tests
+└── tests/             # Automated tests
 ```
 
 ## 💻 Local Development
