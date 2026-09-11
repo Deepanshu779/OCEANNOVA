@@ -93,7 +93,11 @@ function App() {
     <div className="app">
       <header className="topbar">
         <div className="brand-block">
-          <div className="brand-logo">O</div>
+          <img
+            className="brand-logo"
+            src="/oceannova-mark.png"
+            alt="OCEANNOVA logo"
+          />
           <div><h1>OCEANNOVA</h1><span>Marine Oil Spill Intelligence Platform</span></div>
         </div>
         <div className="topbar-meta">
