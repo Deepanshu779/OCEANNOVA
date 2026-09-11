@@ -20,60 +20,125 @@
 
 **Most oil-spill demos stop at detection. OCEANNOVA turns a radar pixel into an investigation trail.**
 
-Our key differentiator is **evidence transparency**. The dashboard explicitly separates:
+OCEANNOVA is designed around **evidence transparency**. The platform distinguishes between real satellite evidence, AI-derived measurements, integration-ready modules, and representative demonstration data instead of presenting simulated information as fact.
 
-- **REAL** — satellite observations and evaluated AI evidence;
-- **DERIVED** — measurements calculated from the AI prediction mask;
-- **READY** — interfaces prepared for authoritative environmental/vessel data;
-- **DEMO** — representative data used only where external feeds are not loaded.
-
-This makes the system impressive without pretending that simulated evidence is real-world proof.
+- **REAL** — Sentinel-1 SAR observations and reference-mask evaluation.
+- **DERIVED** — spill footprint, area, perimeter, compactness and coordinates calculated from AI prediction masks.
+- **READY** — interfaces for authoritative oceanographic and historical AIS data.
+- **DEMO** — representative vessel positions/routes used only when real historical AIS is not loaded.
 
 ## 🚀 Live Demo
 
 - **Web:** https://oceannova-ochre.vercel.app/
 - **API:** https://oceannova-api.onrender.com
-- **Investigation:** `GET /api/v1/spills/SP-001/investigation`
+- **Investigation API:** `GET /api/v1/spills/{spill_id}/investigation`
 
-## 🎯 What We Solve
+## 🎯 Problem We Solve
 
-OCEANNOVA turns a satellite-detected oil slick into an explainable maritime investigation workflow:
+Oil spills are difficult to investigate because detection alone does not explain **where the slick came from, how it evolved, or which vessels should be investigated**.
+
+OCEANNOVA creates an end-to-end investigation workflow:
 
 **Detect → Validate → Characterize → Reconstruct → Correlate → Rank**
 
-The platform is designed as decision support. A candidate score prioritizes vessels for investigation; it does **not** establish legal responsibility.
+The vessel score is investigative decision support. It does **not** establish legal responsibility.
 
 ## 🧠 End-to-End Pipeline
 
 ```text
-Sentinel-1 SAR
-     ↓
-SAR preprocessing
-     ↓
+Sentinel-1 SAR Radar_data
+        ↓
+SAR preprocessing / normalization
+        ↓
 Lightweight U-Net segmentation
-     ↓
-Radiometric / look-alike filtering
-     ↓
-Area + perimeter + compactness
-     ↓
-Ocean current + wind forcing (integration ready)
-     ↓
-Backward / forward drift modelling (integration ready)
-     ↓
-Probable origin + uncertainty
-     ↓
-Historical AIS traffic (integration ready)
-     ↓
-Spatial + temporal filtering
-     ↓
-Explainable vessel ranking
-     ↓
-GIS investigation command center
+        ↓
+Confidence + radiometric + look-alike filtering
+        ↓
+Spill geometry characterization
+        ↓
+Ocean current + wind integration
+        ↓
+Backward / forward drift modelling
+        ↓
+Probable spill origin + uncertainty
+        ↓
+Historical AIS integration
+        ↓
+Spatial + temporal correlation
+        ↓
+Explainable vessel attribution ranking
+        ↓
+GIS Investigation Command Center
 ```
 
-## 🛰️ Real Satellite Evidence
+---
 
-The repository includes a real Sentinel-1A Gulf of Mexico observation (`2018_09_26.tif`) with a reference mask. The evaluated real test scene produced:
+# 🛰️ Datasets Used
+
+## 1. Radar_data — Primary Project Dataset
+
+**Dataset used:** the project's local `Radar_data` collection of **Sentinel-1 SAR oil-spill image/mask pairs**.
+
+Repository location:
+
+```text
+data/external/Radar_data/
+├── train/
+│   ├── images/
+│   └── masks/
+└── test/
+    ├── images/
+    └── masks/
+```
+
+The processed dataset manifest contains **21 Radar_data scenes** mapped to OCEANNOVA incident IDs (`SP-001` onward). Each available scene is processed through the same evidence pipeline and exposed through the Scene Library.
+
+### What the Radar_data contains
+
+| Data | Purpose |
+|---|---|
+| Sentinel-1 SAR `.tif` images | Radar observations used for oil-spill detection |
+| Ground-truth mask `.tif` files | Reference masks for supervised training/evaluation |
+| Train scenes | U-Net model training and in-sample validation evidence |
+| Test scenes | Held-out/reference evaluation where available |
+| CRS metadata | Geo-referencing of satellite observations |
+
+The dataset includes Gulf of Mexico observations. A representative real scene used for held-out evaluation is `2018_09_26.tif`.
+
+### Processed Radar_data outputs
+
+For each processed scene, OCEANNOVA stores evidence under:
+
+```text
+data/processed/all_scenes/<SP-ID>/
+├── probability.npy
+├── predicted_mask.tif
+├── filtered_mask.tif
+├── characterization.json
+└── spill.geojson
+```
+
+A central manifest is maintained at:
+
+```text
+data/processed/all_scenes/manifest.json
+```
+
+This makes every processed Radar_data scene traceable from the original SAR observation to its AI prediction and GIS footprint.
+
+## 2. AI-Generated Spill Footprints
+
+The AI pipeline generates probability maps and prediction masks from the Sentinel-1 SAR imagery. Radiometric, component-size and shape filtering is then applied before exporting the final spill footprint.
+
+Important distinction:
+
+> Predicted spill area, perimeter, compactness and mean AI confidence describe the model output. They are **not** ground-truth accuracy measurements.
+
+## 3. Ground-Truth Masks
+
+Where a Radar_data scene has a corresponding mask, the mask is used as reference evidence for segmentation evaluation.
+
+For the evaluated real test scene `2018_09_26.tif`, the recorded results are:
 
 | Metric | Evaluated result |
 |---|---:|
@@ -82,29 +147,48 @@ The repository includes a real Sentinel-1A Gulf of Mexico observation (`2018_09_
 | Precision | **93.49%** |
 | Recall | **59.48%** |
 
-These metrics describe the **evaluated real test scene only** and are not claimed as production-wide model accuracy.
+These values describe the evaluated real test scene only and are **not claimed as production-wide model accuracy**.
 
-The processed Radar_data library also contains multiple scenes with AI-generated prediction masks, characterization JSON and GeoJSON outputs. Prediction area and mean confidence describe the model output; they are not ground-truth accuracy measures.
+---
 
-## 🔍 Explainable Evidence Console
+# 🚫 External Data Status
 
-The web dashboard now includes a competition-oriented **Evidence Chain**:
+OCEANNOVA currently keeps the demonstration dataset scope focused on the committed `Radar_data` collection.
 
-1. **Satellite evidence — REAL:** Sentinel-1 SAR observation.
-2. **AI segmentation — REAL:** U-Net inference and radiometric/look-alike filtering.
-3. **Spill geometry — DERIVED:** footprint, area, perimeter and coordinates calculated from the prediction mask.
-4. **Origin / drift — READY:** architecture is prepared for authoritative environmental forcing.
-5. **Vessel attribution — DEMO/READY:** the scoring pipeline is prepared for historical AIS, while representative candidates are clearly marked when used for demonstration.
+### Oceanographic forcing
 
-The **Investigation Brief** can be copied directly from the interface for a presentation or review panel.
+The drift/origin architecture is ready for authoritative ocean-current and wind forcing, but external environmental forcing is **not claimed as loaded historical evidence** for the current Radar_data investigations.
+
+### AIS data
+
+The repository contains an explainable AIS attribution engine and representative vessel visualization. **Real historical AIS is not currently loaded into the demonstrated investigations.** Representative candidates are explicitly labelled in the interface so they cannot be confused with historical vessel evidence.
+
+Therefore, OCEANNOVA does **not** claim that a representative vessel caused a real spill.
+
+---
+
+## 🔍 Explainable Evidence Chain
+
+For every investigation, the system separates evidence by provenance:
+
+1. **Satellite evidence — REAL:** Sentinel-1 SAR observation from Radar_data.
+2. **AI segmentation — REAL:** U-Net inference on the SAR observation.
+3. **Spill geometry — DERIVED:** footprint, area, perimeter, compactness and coordinates calculated from the prediction mask.
+4. **Ground-truth evaluation — REAL WHERE AVAILABLE:** comparison against the supplied Radar_data reference mask.
+5. **Origin / drift — READY:** architecture prepared for authoritative environmental forcing.
+6. **Vessel attribution — DEMO/READY:** scoring pipeline prepared for historical AIS; representative candidates are used only for demonstration when AIS is absent.
+
+This provenance model is one of OCEANNOVA's main competition differentiators.
 
 ## 🌊 Drift & Origin Reconstruction
 
-The codebase contains backward/forward drift modelling and origin reconstruction interfaces. Where authoritative environmental forcing is not loaded for a case, the dashboard says so instead of presenting representative forcing as historical evidence.
+The codebase contains backward/forward drift and origin-reconstruction modules. The system is structured to consume current and wind forcing and produce a probable origin with uncertainty.
+
+When authoritative environmental forcing is not loaded, the platform does not present representative forcing as historical evidence.
 
 ## 🚢 AIS Attribution
 
-Candidate ranking uses an explainable weighted score:
+The explainable attribution engine combines four evidence dimensions:
 
 | Evidence | Weight |
 |---|---:|
@@ -113,37 +197,41 @@ Candidate ranking uses an explainable weighted score:
 | Temporal consistency | 20% |
 | Behavioural evidence | 15% |
 
-The architecture supports historical AIS ingestion and candidate ranking. Demonstration vessel tracks are explicitly labelled as representative and must never be presented as historical proof.
+The output is a **ranked investigative candidate score**, not proof of causation.
 
-## 🗺️ GIS Command Center
+## 🗺️ GIS Investigation Command Center
 
 The deployed interface provides:
 
-- Real satellite-derived spill evidence
-- AI confidence and predicted footprint
+- Interactive Sentinel-1-derived spill investigation map
+- Scene Library covering the processed Radar_data observations
+- AI confidence and predicted spill footprint
 - Geo-referenced spill geometry
-- Interactive investigation map
-- Evidence Chain / audit view
-- Scene Library across processed Radar_data observations
+- Vessel correlation visualization
+- Evidence provenance labels
 - Investigation Brief generation
-- Explicit data provenance and limitation labels
-- AIS and environmental-data integration points
+- Dark/light map views
+- Integration points for authoritative AIS and environmental data
+
+---
 
 ## 🏗️ Architecture
 
 ```text
-                  OCEANNOVA
-                       │
-          ┌────────────┴────────────┐
-          │                         │
-      Evidence / AI             Application
-          │                         │
-   Sentinel-1 SAR             React + TypeScript
-   U-Net segmentation          Leaflet GIS
-   Look-alike filtering              │
-   Drift / origin               FastAPI API
-   AIS attribution                   │
-          └──────────── PostgreSQL + PostGIS
+                         OCEANNOVA
+                              │
+             ┌────────────────┴────────────────┐
+             │                                 │
+       Evidence / AI                     Application
+             │                                 │
+      Sentinel-1 SAR                    React + TypeScript
+      Radar_data                        Vite + Leaflet
+      U-Net segmentation                     │
+      Look-alike filtering              FastAPI API
+      Geometry characterization               │
+      Drift / origin                    PostgreSQL + PostGIS
+      AIS attribution
+             └─────────────────────────────────┘
 
 Deployment: GitHub → Vercel + Render + Supabase
 ```
@@ -152,7 +240,7 @@ Deployment: GitHub → Vercel + Render + Supabase
 
 **Frontend:** React, TypeScript, Vite, Leaflet, React Leaflet, CSS  
 **Backend:** Python, FastAPI, SQLAlchemy, GeoAlchemy2, Shapely  
-**AI/Data:** Sentinel-1 SAR processing, U-Net inference, look-alike filtering, drift modelling, AIS analytics  
+**AI/Data:** Sentinel-1 SAR, Radar_data preprocessing, U-Net inference, radiometric filtering, look-alike filtering, geometry analysis, drift modelling, AIS analytics  
 **Database:** PostgreSQL + PostGIS  
 **Deployment:** Vercel, Render, Supabase, GitHub Actions
 
@@ -160,41 +248,48 @@ Deployment: GitHub → Vercel + Render + Supabase
 
 ```text
 OCEANNOVA/
-├── ai-model/          # Spill segmentation and evaluation
-├── ais/               # AIS matching and attribution
+├── ai-model/          # U-Net segmentation and evaluation
+├── ais/               # AIS matching and attribution engine
 ├── backend/           # FastAPI + PostGIS API
-├── data/              # Radar_data and processed evidence
+├── data/
+│   ├── external/      # Radar_data Sentinel-1 images and masks
+│   └── processed/     # AI predictions, characterization and GeoJSON
 ├── docs/              # Architecture and project documentation
 ├── drift/             # Drift and origin modelling
-├── frontend/          # React + Leaflet command center
+├── frontend/          # React + Leaflet GIS command center
 ├── lookalike/         # Look-alike validation
 ├── satellite/         # SAR preprocessing
-└── tests/              # Automated tests
+├── scripts/           # Dataset processing and export utilities
+└── tests/             # Automated tests
 ```
 
 ## 🔬 Evidence Policy
 
 | Source / module | Status | Meaning |
 |---|---|---|
-| Sentinel-1 SAR | **REAL** | Real satellite observation in the project evidence set |
-| U-Net test evaluation | **REAL** | Evaluated against a reference mask on a real test scene |
-| Spill GeoJSON | **REAL DERIVED** | Exported from the AI prediction mask |
-| Drift forcing when absent | **NOT LOADED** | No external environmental evidence is claimed |
-| AIS identities/tracks when absent | **NOT LOADED** | No historical vessel evidence is claimed |
-| AIS scoring engine | **READY** | Can rank authoritative historical AIS when supplied |
-| Environmental forcing adapter | **READY** | Can consume authoritative forcing when supplied |
+| Sentinel-1 SAR Radar_data | **REAL** | Real satellite observations in the project dataset |
+| Ground-truth masks | **REAL** | Supplied reference masks where available |
+| U-Net test evaluation | **REAL** | Reference-mask evaluation on a real test scene |
+| AI spill GeoJSON | **REAL DERIVED** | Exported from AI prediction masks |
+| Spill geometry | **DERIVED** | Calculated from predicted spill regions |
+| Environmental forcing | **NOT LOADED** | No external historical forcing is claimed |
+| Historical AIS | **NOT LOADED** | No real vessel history is claimed in the demo |
+| AIS scoring engine | **READY / DEMO** | Ready for authoritative AIS; representative candidates used for visualization |
+| Environmental forcing adapter | **READY** | Ready for authoritative current/wind data |
 
-## ⚡ Why This Wins a Demo
+## ⚡ Why OCEANNOVA
 
-**1. It looks like an operational system.** A command-center UI, geospatial map and investigation workflow make the pipeline understandable in seconds.
+**1. Detection becomes investigation.** The system moves beyond a simple oil-spill segmentation result.
 
-**2. It is technically honest.** Every evidence layer carries a provenance state instead of mixing real and simulated data.
+**2. Real evidence is separated from derived and demonstration data.** This prevents misleading claims during a technical demo.
 
-**3. It is explainable.** The system exposes how a spill moves through detection, characterization and future correlation rather than returning a black-box answer.
+**3. Explainability is built into the pipeline.** Investigators can follow the evidence from SAR pixels to spill geometry and candidate correlation.
 
-**4. It is extensible.** The same investigation contract can consume authoritative AIS and oceanographic feeds without redesigning the dashboard.
+**4. The architecture is extensible.** Authoritative AIS and environmental feeds can be connected without redesigning the investigation workflow.
 
-**5. It is judge-friendly.** A reviewer can open a scene, see the actual footprint, inspect the evidence chain and copy an investigation brief in one flow.
+**5. The complete processed Radar_data library is accessible through the Scene Library.** Each scene has a traceable incident ID and processed evidence artifacts.
+
+---
 
 ## 💻 Local Development
 
@@ -231,9 +326,10 @@ GET /api/v1/spills/{spill_id}/geojson
 
 ## 🔮 Roadmap
 
-- [x] Real Sentinel-1 validation workflow
+- [x] Real Sentinel-1 Radar_data workflow
 - [x] U-Net inference and GeoJSON export
 - [x] Multi-scene processed Radar_data library
+- [x] Scene Library with selectable processed scenes
 - [x] Explainable AIS attribution engine
 - [x] Drift/origin architecture
 - [x] FastAPI + PostGIS backend
@@ -242,7 +338,7 @@ GET /api/v1/spills/{spill_id}/geojson
 - [x] Investigation brief generation
 - [ ] Real historical AIS event ingestion into a selected case
 - [ ] Real environmental forcing wired into a selected case
-- [ ] Multi-scene satellite ingestion and automated alerts
+- [ ] Multi-scene automated satellite ingestion and alerts
 - [ ] Production-scale look-alike training and uncertainty-aware ensembles
 
 ## ⚠️ Responsible Use
