@@ -11,7 +11,7 @@ import {
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { GeoJsonObject } from "geojson";
 import { getSpillGeoJSON, type Investigation, type Vessel } from "../services/api";
 
@@ -69,6 +69,41 @@ function vesselPopup(vessel: Vessel) {
   );
 }
 
+function VesselAttributionPanel({ vessels }: { vessels: Vessel[] }) {
+  const ranked = useMemo(() => [...vessels].sort((a, b) => b.attribution_score - a.attribution_score).slice(0, 4), [vessels]);
+  return (
+    <aside className="vessel-attribution-panel" aria-label="Vessel attribution ranking">
+      <div className="vessel-panel-head">
+        <div>
+          <span className="vessel-panel-kicker">VESSEL ATTRIBUTION</span>
+          <h3>Potential vessels</h3>
+        </div>
+        <span className="vessel-demo-badge">DEMO DATASET</span>
+      </div>
+      <p className="vessel-panel-subtitle">Ranked by proximity, temporal correlation, trajectory and behavioral evidence.</p>
+      <div className="vessel-ranking">
+        {ranked.map((vessel, index) => {
+          const score = Math.max(0, Math.min(100, vessel.attribution_score));
+          const level = score >= 90 ? "high" : score >= 75 ? "medium" : "low";
+          return (
+            <div className={`vessel-rank-card ${level}`} key={vessel.mmsi}>
+              <div className="vessel-rank-number">{index + 1}</div>
+              <div className="vessel-rank-icon">🚢</div>
+              <div className="vessel-rank-main">
+                <strong>{vessel.vessel_name ?? vessel.mmsi}</strong>
+                <span>{vessel.distance_km == null ? "Distance unavailable" : `${vessel.distance_km.toFixed(1)} km from origin`} · {vessel.time_difference_hours == null ? "time unavailable" : `${Math.abs(vessel.time_difference_hours).toFixed(1)} h offset`}</span>
+                <div className="vessel-score-track"><i style={{ width: `${score}%` }} /></div>
+              </div>
+              <b className="vessel-score">{score.toFixed(1)}%</b>
+            </div>
+          );
+        })}
+      </div>
+      <div className="vessel-panel-note"><span>i</span><p>Attribution score indicates evidence-based likelihood, not proof of responsibility. Current candidates are representative demo data.</p></div>
+    </aside>
+  );
+}
+
 export default function MapView({ investigation }: MapViewProps) {
   const [spillGeoJson, setSpillGeoJson] = useState<GeoJsonObject | null>(null);
   useEffect(() => {
@@ -92,8 +127,9 @@ export default function MapView({ investigation }: MapViewProps) {
       </GeoJSON>}
       <div className="map-overview-label">GULF OF MEXICO • RADAR EVIDENCE</div>
       <div className="map-hero-card"><div className="map-hero-kicker">REAL RADAR INVESTIGATION</div><strong>{investigation.spill_id} • {investigation.area_km2} km²</strong><span>Sentinel-1 SAR → U-Net → characterization</span></div>
-      <div className="map-legend"><div className="legend-title">EVIDENCE LEGEND</div><div><span className="legend-footprint" /> Processed spill footprint</div><div><span className="legend-dot legend-origin" /> Origin analysis when available</div><div><span className="legend-line" /> Drift when available</div><div><span className="legend-vessel-icon">🚢</span> Representative candidate</div></div>
-      <div className="map-status-card"><strong>● RADAR EVIDENCE ACTIVE</strong><span>DETECT → CHARACTERIZE</span></div>
+      <div className="map-legend"><div className="legend-title">EVIDENCE LEGEND</div><div><span className="legend-footprint" /> Processed spill footprint</div><div><span className="legend-dot legend-origin" /> Origin analysis when available</div><div><span className="legend-line" /> Drift when available</div><div><span className="legend-vessel-icon">🚢</span> Vessel attribution candidate</div></div>
+      <div className="map-status-card"><strong>● RADAR EVIDENCE ACTIVE</strong><span>DETECT → CHARACTERIZE → CORRELATE</span></div>
+      <VesselAttributionPanel vessels={investigation.vessels} />
       <Marker position={spillPosition} icon={spillIcon}><Popup><strong>{investigation.spill_id}</strong><br />Real processed Radar_data candidate<br />Confidence: {(investigation.confidence * 100).toFixed(1)}%<br />Predicted area: {investigation.area_km2} km²<br />Age: Not available from a single scene</Popup></Marker>
       {originPosition && <><Circle center={originPosition} radius={investigation.origin!.uncertainty_km * 1000} pathOptions={{ fillOpacity: 0.12, weight: 2, dashArray: "7 6" }} /><Marker position={originPosition} icon={originIcon} /></>}
       {driftPath.length > 1 && <Polyline positions={driftPath} pathOptions={{ weight: 4, opacity: 0.9 }} />}
