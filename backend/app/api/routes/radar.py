@@ -1,10 +1,13 @@
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.schemas.investigation import (
     InvestigationResponse,
@@ -17,14 +20,37 @@ from app.schemas.investigation import (
 router = APIRouter(prefix="/radar", tags=["Radar_data"])
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 PROCESSED_ROOT = PROJECT_ROOT / "data" / "processed" / "all_scenes"
+GITHUB_RAW_ROOT = "https://raw.githubusercontent.com/Deepanshu779/OCEANNOVA/main/data/processed/all_scenes"
+
+
+def _safe_spill_id(spill_id: str) -> str:
+    if not re.fullmatch(r"SP-\d{3,4}", spill_id):
+        raise HTTPException(status_code=400, detail="Invalid Radar_data scene id")
+    return spill_id
+
+
+def _github_raw_text(spill_id: str, filename: str) -> str | None:
+    """Read a committed processed artifact when the Render filesystem lacks data/."""
+    url = f"{GITHUB_RAW_ROOT}/{spill_id}/{filename}"
+    try:
+        request = Request(url, headers={"User-Agent": "OCEANNOVA/1.0"})
+        with urlopen(request, timeout=8) as response:
+            return response.read().decode("utf-8")
+    except (HTTPError, URLError, TimeoutError, UnicodeDecodeError, OSError):
+        return None
 
 
 def _load_characterization(spill_id: str) -> dict:
+    spill_id = _safe_spill_id(spill_id)
     path = PROCESSED_ROOT / spill_id / "characterization.json"
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="Processed Radar_data scene not found")
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        if path.exists():
+            raw = path.read_text(encoding="utf-8")
+        else:
+            raw = _github_raw_text(spill_id, "characterization.json")
+            if raw is None:
+                raise HTTPException(status_code=404, detail="Processed Radar_data scene not found")
+        return json.loads(raw)
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=500, detail="Invalid processed characterization JSON") from exc
 
@@ -131,7 +157,15 @@ def get_real_radar_investigation(spill_id: str):
 
 @router.get("/spills/{spill_id}/geojson")
 def get_real_radar_geojson(spill_id: str):
+    spill_id = _safe_spill_id(spill_id)
     path = PROCESSED_ROOT / spill_id / "spill.geojson"
-    if not path.exists():
+    if path.exists():
+        return FileResponse(path, media_type="application/geo+json")
+
+    raw = _github_raw_text(spill_id, "spill.geojson")
+    if raw is None:
         raise HTTPException(status_code=404, detail="Processed Radar_data GeoJSON not found")
-    return FileResponse(path, media_type="application/geo+json")
+    try:
+        return JSONResponse(content=json.loads(raw), media_type="application/geo+json")
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="Invalid processed Radar_data GeoJSON") from exc
