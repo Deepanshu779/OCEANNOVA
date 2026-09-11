@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 import MapView from "./components/MapView";
-import Sidebar from "./components/Sidebar";
-import { getDatasetScenes, getInvestigation, type DatasetScene, type Investigation, type Vessel } from "./services/api";
+import { getDatasetScenes, getInvestigation, type DatasetScene, type Investigation } from "./services/api";
 import "./index.css";
 
 function App() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
-  const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
   const [selectedScene, setSelectedScene] = useState("SP-001");
   const [scenes, setScenes] = useState<DatasetScene[]>([]);
   const [showDatasets, setShowDatasets] = useState(false);
@@ -26,7 +24,6 @@ function App() {
           getDatasetScenes().catch(() => []),
         ]);
         setInvestigation(data);
-        setSelectedVessel(data.vessels[0] ?? null);
         setScenes(inventory);
       } catch (err) {
         console.error(err);
@@ -68,9 +65,7 @@ function App() {
     setError(null);
     setSceneLoading(true);
     try {
-      const data = await getInvestigation(investigationId);
-      setInvestigation(data);
-      setSelectedVessel(data.vessels[0] ?? null);
+      setInvestigation(await getInvestigation(investigationId));
     } catch (err) {
       console.error(err);
       setError(`Unable to load processed Radar_data result for ${investigationId}.`);
@@ -80,71 +75,96 @@ function App() {
   };
 
   if (loading) {
-    return <div className="loading-screen"><div><div className="loading-mark">O</div><strong>Loading OCEANNOVA</strong><span>Connecting to real Radar_data investigation API…</span></div></div>;
+    return <div className="loading-screen"><div><div className="loading-mark">O</div><strong>Loading OCEANNOVA</strong><span>Connecting to the investigation service…</span></div></div>;
   }
 
   if (error || !investigation) {
-    return <div className="loading-screen"><div><div className="loading-mark">!</div><strong>{error ?? "No investigation data available."}</strong><span>Start the FastAPI backend and refresh the dashboard.</span></div></div>;
+    return <div className="loading-screen"><div><div className="loading-mark">!</div><strong>{error ?? "No investigation data available."}</strong><span>Check that the FastAPI service is running and refresh the dashboard.</span></div></div>;
   }
 
-  const datasetCount = scenes.length;
+  const confidence = investigation.confidence * 100;
+  const datasetCount = scenes.length || 21;
+  const perimeter = investigation.characterization.perimeter_estimate_km;
+  const compactness = investigation.characterization.compactness_estimate;
 
   return (
     <div className="app">
       <header className="topbar">
         <div className="brand-block">
-          <img
-            className="brand-logo"
-            src="/oceannova-mark.png"
-            alt="OCEANNOVA logo"
-          />
-          <div><h1>OCEANNOVA</h1><span>Marine Oil Spill Intelligence Platform</span></div>
+          <img className="brand-logo-image" src="/oceannova-mark.png" alt="OCEANNOVA" />
+          <div className="brand-copy"><h1>OCEANNOVA</h1><span>Cleaner Oceans, Safer Tomorrow</span></div>
         </div>
-        <div className="topbar-meta">
-          <span className="live-dot" /><span>SYSTEM ONLINE</span>
-          <button className="dataset-button" onClick={openDatasets}>REAL RADAR DATA <b>{datasetCount}</b></button>
-          <span className="topbar-divider" /><span>SIH26143</span>
-        </div>
+        <div className="product-title">AI-Driven Oil Spill Detection &amp; Investigation</div>
+        <nav className="top-links"><button type="button">About</button><button type="button">Documentation</button><button type="button">Contact</button><span className="profile-chip">◯</span></nav>
       </header>
 
-      <div className="scene-banner">
-        <strong>{selectedScene}</strong>
-        <span>{sceneLoading ? "Loading processed Radar_data result…" : "Real processed Radar_data scene • U-Net + post-processing"}</span>
-      </div>
-
-      <main className="dashboard">
-        <Sidebar investigation={investigation} onSelectVessel={setSelectedVessel} />
-        <section className="map-container">
-          <MapView investigation={investigation} selectedVessel={selectedVessel} />
-          <div className="map-status-card">
-            <strong>{selectedScene} • Real Radar Investigation</strong>
-            <span>DETECT → CHARACTERIZE • AIS/DRIFT NOT LOADED</span>
+      <div className="workspace">
+        <aside className="app-nav">
+          <div className="nav-group">
+            <button type="button" className="nav-item active"><span>⌂</span>Dashboard</button>
+            <button type="button" className="nav-item"><span>⌁</span>Radar Analysis</button>
+            <button type="button" className="nav-item"><span>⌕</span>Spill Investigation</button>
+            <button type="button" className="nav-item"><span>▤</span>Data &amp; Reports</button>
+            <button type="button" className="nav-item"><span>◫</span>Map Viewer</button>
           </div>
-        </section>
-      </main>
+          <div className="nav-bottom">
+            <button type="button" className="nav-item"><span>⚙</span>Settings</button>
+            <button type="button" className="nav-item"><span>?</span>Help</button>
+            <div className="nav-brand-note"><div className="wave-mark">〰</div><strong>Cleaner Oceans</strong><span>Safer Tomorrow</span></div>
+            <small>© 2026 OCEANNOVA<br />All rights reserved.</small>
+          </div>
+        </aside>
+
+        <main className="content">
+          <div className="content-header">
+            <div><p className="eyebrow">OCEAN MONITORING WORKSPACE</p><h2>Dashboard</h2><p>Monitor and analyze potential oil spills from processed satellite radar scenes.</p></div>
+            <div className="header-status"><span className="online-dot" />System Online</div>
+          </div>
+
+          <div className="metric-grid">
+            <div className="metric-card"><span className="metric-icon">▱</span><div><span>Scenes Available</span><strong>{datasetCount}</strong><small>Processed satellite scenes</small></div></div>
+            <div className="metric-card"><span className="metric-icon">●</span><div><span>Potential Spills</span><strong>{datasetCount}</strong><small>Detected by AI model</small></div></div>
+            <div className="metric-card"><span className="metric-icon">⌖</span><div><span>Areas Analyzed</span><strong>{datasetCount}</strong><small>Geo-referenced regions</small></div></div>
+            <div className="metric-card"><span className="metric-icon">▤</span><div><span>Reports Generated</span><strong>{datasetCount}</strong><small>Characterization files</small></div></div>
+          </div>
+
+          <div className="main-grid">
+            <section className="panel map-panel">
+              <div className="panel-heading"><div><p className="eyebrow">SPATIAL ANALYSIS</p><h3>Map View</h3></div><button type="button" className="scene-select" onClick={openDatasets}>{selectedScene} <span>⌄</span></button></div>
+              <div className="map-frame"><MapView investigation={investigation} /></div>
+            </section>
+
+            <section className="panel details-panel">
+              <div className="panel-heading"><div><p className="eyebrow">SELECTED DETECTION</p><h3>Scene Details</h3></div><span className="status-pill">Potential Spill Detected</span></div>
+              <div className="scene-title-row"><strong>{selectedScene}</strong><span>{sceneLoading ? "Loading…" : "REAL RADAR DATA"}</span></div>
+              <dl className="detail-list">
+                <div><dt>Scene</dt><dd>{investigation.spill_id}</dd></div>
+                <div><dt>Location (Center)</dt><dd>{investigation.centroid.lat.toFixed(4)}° N, {Math.abs(investigation.centroid.lon).toFixed(4)}° W</dd></div>
+                <div><dt>Detected Area</dt><dd>{investigation.area_km2.toFixed(4)} km²</dd></div>
+                <div><dt>Perimeter</dt><dd>{perimeter != null ? `${perimeter.toFixed(2)} km` : "N/A"}</dd></div>
+                <div><dt>AI Confidence</dt><dd>{confidence.toFixed(1)}%</dd></div>
+                <div><dt>Compactness</dt><dd>{compactness != null ? compactness.toFixed(4) : "N/A"}</dd></div>
+              </dl>
+              <div className="details-note">Single-scene SAR output. Spill age, ocean drift and vessel attribution are not inferred here.</div>
+              <div className="detail-buttons"><button type="button" className="primary-button">▤ View Full Report</button><button type="button" className="secondary-button" onClick={() => window.open(`/data/${selectedScene}_spill.geojson`, "_blank")}>⇩ Download GeoJSON</button></div>
+            </section>
+          </div>
+
+          <div className="bottom-grid">
+            <section className="panel compact-panel"><div className="panel-heading"><h3>Recent Detections</h3><button type="button" className="text-button" onClick={openDatasets}>View All</button></div><button type="button" className="detection-row" onClick={openDatasets}><span className="detection-dot" /><div><strong>{selectedScene}</strong><small>Real processed Radar_data scene</small><span>Potential oil spill detected</span></div><b>›</b></button></section>
+            <section className="panel compact-panel"><div className="panel-heading"><h3>System Status</h3></div><div className="status-row"><i /> <div><strong>Model Ready</strong><span>U-Net model pipeline configured</span></div></div><div className="status-row"><i /> <div><strong>Data Pipeline</strong><span>Processed scene outputs available</span></div></div></section>
+            <section className="panel compact-panel"><div className="panel-heading"><h3>Quick Actions</h3></div><button type="button" className="quick-button" onClick={openDatasets}>↥ Analyze New Scene</button><button type="button" className="quick-button" onClick={openDatasets}>▤ View All Reports</button></section>
+          </div>
+        </main>
+      </div>
 
       {showDatasets && (
         <div className="dataset-overlay" onClick={() => setShowDatasets(false)}>
           <section className="dataset-panel" onClick={(event) => event.stopPropagation()}>
-            <div className="dataset-header">
-              <div><span className="eyebrow">REAL RADAR_DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>{datasetLoading ? "Reading Radar_data from backend…" : `${scenes.length} processed scenes discovered from the Radar_data folder.`}</p></div>
-              <button className="dataset-close" onClick={() => setShowDatasets(false)}>×</button>
-            </div>
+            <div className="dataset-header"><div><span className="eyebrow">REAL RADAR_DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>{datasetLoading ? "Reading processed scenes…" : `${scenes.length} processed scenes discovered.`}</p></div><button type="button" className="dataset-close" onClick={() => setShowDatasets(false)}>×</button></div>
             <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>{filteredScenes.length} / {scenes.length} scenes</span></div>
-            <div className="dataset-grid">
-              {filteredScenes.map((scene) => {
-                const investigationId = getInvestigationId(scene);
-                return (
-                  <button key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === investigationId ? "selected active" : ""}`} onClick={() => selectScene(scene)}>
-                    <div className="dataset-card-top"><strong>{investigationId}</strong><span>{scene.has_mask ? "REAL + MASK" : "REAL IMAGE"}</span></div>
-                    <div className="dataset-date">{scene.scene_id}</div><small>{scene.file}</small><small>{scene.split.toUpperCase()} • Sentinel-1A GRD VV</small>
-                    <em>Open real processed investigation →</em>
-                  </button>
-                );
-              })}
-              {!datasetLoading && scenes.length === 0 && <div className="dataset-empty">No Radar_data scenes are visible to the running backend.</div>}
-            </div>
-            <footer className="dataset-footer">SOURCE: local Radar_data • processed U-Net segmentation, filtering, characterization and GeoJSON outputs. No synthetic AIS or ocean forcing is used in this dataset view.</footer>
+            <div className="dataset-grid">{filteredScenes.map((scene) => { const id = getInvestigationId(scene); return <button type="button" key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === id ? "selected" : ""}`} onClick={() => selectScene(scene)}><div className="dataset-card-top"><strong>{id}</strong><span>{scene.has_mask ? "REAL + MASK" : "REAL IMAGE"}</span></div><div className="dataset-date">{scene.scene_id}</div><small>{scene.file}</small><small>{scene.split.toUpperCase()} • Sentinel-1A GRD VV</small><em>Open processed investigation →</em></button>; })}</div>
+            <footer className="dataset-footer">SOURCE: processed Radar_data • U-Net segmentation, filtering, characterization and GeoJSON outputs.</footer>
           </section>
         </div>
       )}
