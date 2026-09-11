@@ -27,6 +27,34 @@ export interface DatasetScene {
   image_path: string;
 }
 
+// Production-safe fallback for the first processed Radar_data scene. This is
+// derived from the committed processed characterization, so the deployed UI
+// remains usable during a Render cold start or transient API outage. It does
+// not invent AIS, drift, age, or origin evidence.
+const LOCAL_FALLBACK_INVESTIGATION: Investigation = {
+  spill_id: "SP-001",
+  confidence: 0.950333,
+  area_km2: 87.6585,
+  centroid: { lat: 29.067594232483923, lon: -88.75003437813322 },
+  characterization: {
+    area_km2: 87.6585,
+    perimeter_estimate_km: 422.1,
+    compactness_estimate: 0.006183,
+    estimated_age_hours: null,
+    age_status: "not_available_from_single_radar_scene",
+  },
+  origin: null,
+  drift: [],
+  traffic: {
+    total_vessels_considered: 0,
+    filtered_irrelevant: 0,
+    ranked_candidates: 0,
+    filtering_rule: "Historical AIS not loaded",
+  },
+  vessels: [],
+  vessel_tracks: [],
+};
+
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: { Accept: "application/json" },
@@ -35,12 +63,32 @@ async function request<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function getInvestigation(spillId: string): Promise<Investigation> {
-  return request<Investigation>(`/radar/spills/${encodeURIComponent(spillId)}/investigation`);
+export async function getInvestigation(spillId: string): Promise<Investigation> {
+  try {
+    return await request<Investigation>(`/radar/spills/${encodeURIComponent(spillId)}/investigation`);
+  } catch (error) {
+    // Keep the deployed dashboard usable if Render is sleeping or temporarily
+    // unavailable. Only SP-001 has a committed local processed characterization.
+    if (spillId === LOCAL_FALLBACK_INVESTIGATION.spill_id) {
+      console.warn("OCEANNOVA API unavailable; using committed Radar_data fallback.", error);
+      return LOCAL_FALLBACK_INVESTIGATION;
+    }
+    throw error;
+  }
 }
 
-export function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
-  return request<GeoJsonObject>(`/radar/spills/${encodeURIComponent(spillId)}/geojson`);
+export async function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
+  try {
+    return await request<GeoJsonObject>(`/radar/spills/${encodeURIComponent(spillId)}/geojson`);
+  } catch (error) {
+    // The real processed footprint is also committed to the Vercel static build.
+    const localResponse = await fetch(`/data/${encodeURIComponent(spillId)}_spill.geojson`, {
+      headers: { Accept: "application/geo+json,application/json" },
+    });
+    if (!localResponse.ok) throw error;
+    console.warn("OCEANNOVA API unavailable; using committed GeoJSON footprint.", error);
+    return (await localResponse.json()) as GeoJsonObject;
+  }
 }
 
 export async function getDatasetScenes(): Promise<DatasetScene[]> {
