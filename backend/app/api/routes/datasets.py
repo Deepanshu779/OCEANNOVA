@@ -11,8 +11,19 @@ PROCESSED_ROOT = PROJECT_ROOT / "data" / "processed" / "all_scenes"
 MANIFEST_PATH = PROCESSED_ROOT / "manifest.json"
 
 
+def manifest_incidents() -> dict[str, str]:
+    if not MANIFEST_PATH.exists():
+        return {}
+    try:
+        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        return {str(item.get("scene_id")): str(item.get("incident_id")) for item in manifest.get("scenes", []) if item.get("scene_id") and item.get("incident_id")}
+    except (OSError, json.JSONDecodeError, TypeError):
+        return {}
+
+
 def discover_scenes() -> list[dict]:
     scenes: list[dict] = []
+    incident_by_scene = manifest_incidents()
     for split in ("test", "train"):
         image_dir = DATA_ROOT / split / "images"
         mask_dir = DATA_ROOT / split / "masks"
@@ -21,6 +32,7 @@ def discover_scenes() -> list[dict]:
         for image_path in sorted(image_dir.glob("*.tif")):
             mask_path = mask_dir / image_path.name
             scenes.append({
+                "incident_id": incident_by_scene.get(image_path.stem),
                 "scene_id": image_path.stem,
                 "file": image_path.name,
                 "split": split,
@@ -29,7 +41,6 @@ def discover_scenes() -> list[dict]:
                 "image_path": str(image_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
             })
     if scenes:
-        # Keep API order deterministic; the frontend uses incident_id when available.
         return scenes
 
     if MANIFEST_PATH.exists():
@@ -56,8 +67,4 @@ def discover_scenes() -> list[dict]:
 @router.get("")
 def list_datasets():
     scenes = discover_scenes()
-    return {
-        "source": "OCEANNOVA processed Radar_data",
-        "total": len(scenes),
-        "scenes": scenes,
-    }
+    return {"source": "OCEANNOVA processed Radar_data", "total": len(scenes), "scenes": scenes}
