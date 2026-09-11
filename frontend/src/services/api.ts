@@ -1,3 +1,5 @@
+import type { GeoJsonObject } from "geojson";
+
 const API_BASE_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
   "http://127.0.0.1:8000/api/v1";
@@ -21,9 +23,15 @@ export interface DatasetScene {
 }
 
 export async function getInvestigation(spillId: string): Promise<Investigation> {
-  const response = await fetch(`${API_BASE_URL}/spills/${encodeURIComponent(spillId)}/investigation`);
-  if (!response.ok) throw new Error(`Failed to fetch investigation: ${response.status}`);
+  const response = await fetch(`${API_BASE_URL}/radar/spills/${encodeURIComponent(spillId)}/investigation`);
+  if (!response.ok) throw new Error(`Failed to fetch Radar_data investigation: ${response.status}`);
   return (await response.json()) as Investigation;
+}
+
+export async function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
+  const response = await fetch(`${API_BASE_URL}/radar/spills/${encodeURIComponent(spillId)}/geojson`);
+  if (!response.ok) throw new Error(`Failed to fetch Radar_data GeoJSON: ${response.status}`);
+  return (await response.json()) as GeoJsonObject;
 }
 
 export async function getDatasetScenes(): Promise<DatasetScene[]> {
