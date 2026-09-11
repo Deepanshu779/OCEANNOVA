@@ -4,7 +4,11 @@ services:
     runtime: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: python seed_data.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Never run database seeding before the web process starts. A transient
+    # Postgres outage must not prevent the FastAPI process from binding its port.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Liveness is intentionally database-independent. /api/v1/ready is the
+    # dependency/readiness diagnostic endpoint.
     healthCheckPath: /api/v1/health
     envVars:
       - key: DATABASE_URL
