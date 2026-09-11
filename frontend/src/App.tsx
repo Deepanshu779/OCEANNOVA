@@ -16,6 +16,7 @@ function App() {
   const [investigation, setInvestigation] = useState<Investigation | null>(null);
   const [scenes, setScenes] = useState<DatasetScene[]>([]);
   const [selectedScene, setSelectedScene] = useState("SP-001");
+  const [selectedFile, setSelectedFile] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [dark, setDark] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -23,7 +24,12 @@ function App() {
 
   useEffect(() => {
     Promise.all([getInvestigation("SP-001"), getDatasetScenes().catch(() => [])])
-      .then(([data, inventory]) => { setInvestigation(data); setScenes(inventory); })
+      .then(([data, inventory]) => {
+        setInvestigation(data);
+        setScenes(inventory);
+        const first = inventory.find((s) => s.incident_id === "SP-001") ?? inventory[0];
+        if (first) setSelectedFile(first.file);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -38,10 +44,15 @@ function App() {
   }, [investigation]);
 
   async function chooseScene(scene: DatasetScene) {
-    const index = scenes.findIndex((s) => s.scene_id === scene.scene_id && s.split === scene.split);
-    const id = `SP-${String(index + 1).padStart(3, "0")}`;
-    setSelectedScene(id); setLibraryOpen(false); setBusy(true);
-    try { setInvestigation(await getInvestigation(id)); } finally { setBusy(false); }
+    // The processed pipeline assigns a stable SP-xxx incident ID. Use it directly
+    // instead of deriving it from array position (test/train ordering can differ).
+    const id = scene.incident_id || `SP-${String(scenes.indexOf(scene) + 1).padStart(3, "0")}`;
+    setSelectedScene(id);
+    setSelectedFile(scene.file);
+    setLibraryOpen(false);
+    setBusy(true);
+    try { setInvestigation(await getInvestigation(id)); }
+    finally { setBusy(false); }
   }
 
   if (loading || !investigation) return <div className="loading-screen"><div className="loading-card"><span className="loader" /><strong>Loading OCEANNOVA</strong><p>Preparing the investigation workspace…</p></div></div>;
@@ -61,7 +72,7 @@ function App() {
         <aside className="command-sidebar"><div><div className="mission-label">MISSION CONTROL</div><button className="command-nav active"><span>⌂</span>Overview</button><button className="command-nav" onClick={() => setLibraryOpen(true)}><span>▱</span>Scene Library</button><button className="command-nav"><span>◉</span>Evidence Chain</button><button className="command-nav"><span>▤</span>Reports</button><button className="command-nav"><span>⚙</span>Settings</button></div><div className="sidebar-ocean"><div className="sidebar-wave">◒</div><strong>Protecting<br />Our Oceans<br />with AI</strong><small>OCEANNOVA<br />v1.0.0</small></div></aside>
 
         <main className="investigation-workspace">
-          <div className="map-toolbar"><button onClick={() => setLibraryOpen(true)}>Scene: <strong>{selectedScene}</strong>⌄</button><div><span>LIVE INVESTIGATION</span><b>{busy ? "Loading" : "Ready"}</b></div></div>
+          <div className="map-toolbar"><button onClick={() => setLibraryOpen(true)}>Scene: <strong>{selectedScene}</strong>{selectedFile ? <small className="scene-file-label">{selectedFile}</small> : null}⌄</button><div><span>LIVE INVESTIGATION</span><b>{busy ? "Loading" : "Ready"}</b></div></div>
           <section className="map-stage"><MapView investigation={{ ...investigation, vessels }} darkMode={dark} /></section>
 
           <section className="bottom-evidence">
@@ -72,7 +83,7 @@ function App() {
         </main>
       </div>
 
-      {libraryOpen && <div className="scene-modal" onClick={() => setLibraryOpen(false)}><div className="scene-dialog" onClick={(e) => e.stopPropagation()}><div className="scene-dialog-head"><div><small>PROCESSED RADAR_DATA</small><h2>Scene Library</h2><p>Select a processed Sentinel-1 observation.</p></div><button onClick={() => setLibraryOpen(false)}>×</button></div><div className="scene-grid">{scenes.map((scene) => <button key={`${scene.scene_id}-${scene.split}`} onClick={() => chooseScene(scene)}><span>{scene.split.toUpperCase()}</span><strong>{scene.scene_id}</strong><small>{scene.file}</small><i>Open investigation →</i></button>)}</div></div></div>}
+      {libraryOpen && <div className="scene-modal" onClick={() => setLibraryOpen(false)}><div className="scene-dialog" onClick={(e) => e.stopPropagation()}><div className="scene-dialog-head"><div><small>PROCESSED RADAR_DATA</small><h2>Scene Library</h2><p>Every processed Sentinel-1 observation is available for investigation.</p></div><button onClick={() => setLibraryOpen(false)}>×</button></div><div className="scene-grid">{scenes.map((scene) => { const id = scene.incident_id || `SP-${String(scenes.indexOf(scene) + 1).padStart(3, "0")}`; return <button key={`${id}-${scene.scene_id}-${scene.split}`} onClick={() => chooseScene(scene)}><span>{scene.split.toUpperCase()} • {scene.has_mask ? "GROUND TRUTH" : "NO MASK"}</span><strong>{id}</strong><small>{scene.file}</small><i>Open investigation →</i></button>; })}</div></div></div>}
     </div>
   );
 }
