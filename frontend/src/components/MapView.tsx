@@ -27,7 +27,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-const vesselIcon = L.divIcon({ className: "vessel-marker", html: "🚢", iconSize: [32, 32], iconAnchor: [16, 16] });
 const spillIcon = L.divIcon({ className: "spill-marker", html: `<div class="spill-marker-inner"></div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
 const originIcon = L.divIcon({ className: "origin-marker", html: `<div class="origin-marker-inner"></div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
 const selectedVesselIcon = L.divIcon({ className: "selected-vessel-marker", html: `<div class="selected-vessel-inner">🚢</div>`, iconSize: [42, 42], iconAnchor: [21, 21] });
@@ -97,20 +96,17 @@ export default function MapView({ investigation }: MapViewProps) {
       )}
 
       <div className="map-overview-label">GULF OF MEXICO • REAL RADAR_DATA SCENE</div>
-
       <div className="map-hero-card">
         <div className="map-hero-kicker">REAL RADAR INVESTIGATION</div>
         <strong>{investigation.spill_id} • {investigation.area_km2} km²</strong>
         <span>Sentinel-1 SAR → U-Net → characterization</span>
       </div>
-
       <div className="map-legend">
         <div className="legend-title">MAP LEGEND</div>
         <div><span className="legend-footprint" /> Real processed spill footprint</div>
-        <div><span className="legend-dot legend-origin" /> Origin analysis not loaded</div>
-        <div><span className="legend-line" /> Drift not loaded</div>
+        <div><span className="legend-dot legend-origin" /> Origin analysis when available</div>
+        <div><span className="legend-line" /> Drift when available</div>
       </div>
-
       <div className="map-status-card">
         <strong>● RADAR INVESTIGATION ACTIVE</strong>
         <span>DETECT → CHARACTERIZE</span>
@@ -133,9 +129,7 @@ export default function MapView({ investigation }: MapViewProps) {
         </>
       )}
 
-      {driftPath.length > 1 && (
-        <Polyline positions={driftPath} pathOptions={{ weight: 4, opacity: 0.9 }} />
-      )}
+      {driftPath.length > 1 && <Polyline positions={driftPath} pathOptions={{ weight: 4, opacity: 0.9 }} />}
 
       {investigation.vessels.map((vessel) => {
         if (vessel.latitude == null || vessel.longitude == null) return null;
