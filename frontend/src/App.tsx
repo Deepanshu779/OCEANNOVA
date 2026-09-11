@@ -83,7 +83,6 @@ function App() {
   }
 
   const confidence = investigation.confidence * 100;
-  const datasetCount = scenes.length || 21;
   const perimeter = investigation.characterization.perimeter_estimate_km;
   const compactness = investigation.characterization.compactness_estimate;
 
@@ -94,7 +93,7 @@ function App() {
           <img className="brand-logo-image" src="/oceannova-mark.png" alt="OCEANNOVA" />
           <div className="brand-copy"><h1>OCEANNOVA</h1><span>Cleaner Oceans, Safer Tomorrow</span></div>
         </div>
-        <div className="product-title">AI-Driven Oil Spill Detection &amp; Investigation</div>
+        <div className="product-title">Oil Spill Detection &amp; Investigation</div>
         <nav className="top-links"><button type="button">About</button><button type="button">Documentation</button><button type="button">Contact</button><span className="profile-chip">◯</span></nav>
       </header>
 
@@ -117,15 +116,15 @@ function App() {
 
         <main className="content">
           <div className="content-header">
-            <div><p className="eyebrow">OCEAN MONITORING WORKSPACE</p><h2>Dashboard</h2><p>Monitor and analyze potential oil spills from processed satellite radar scenes.</p></div>
+            <div><p className="eyebrow">OCEAN MONITORING WORKSPACE</p><h2>Dashboard</h2><p>Select a radar scene to inspect its detection and processed evidence.</p></div>
             <div className="header-status"><span className="online-dot" />System Online</div>
           </div>
 
           <div className="metric-grid">
-            <div className="metric-card"><span className="metric-icon">▱</span><div><span>Scenes Available</span><strong>{datasetCount}</strong><small>Processed satellite scenes</small></div></div>
-            <div className="metric-card"><span className="metric-icon">●</span><div><span>Potential Spills</span><strong>{datasetCount}</strong><small>Detected by AI model</small></div></div>
-            <div className="metric-card"><span className="metric-icon">⌖</span><div><span>Areas Analyzed</span><strong>{datasetCount}</strong><small>Geo-referenced regions</small></div></div>
-            <div className="metric-card"><span className="metric-icon">▤</span><div><span>Reports Generated</span><strong>{datasetCount}</strong><small>Characterization files</small></div></div>
+            <div className="metric-card"><span className="metric-icon">▱</span><div><span>Current Scene</span><strong>{selectedScene}</strong><small>Selected radar scene</small></div></div>
+            <div className="metric-card"><span className="metric-icon">●</span><div><span>Detection</span><strong>{sceneLoading ? "Loading" : "Ready"}</strong><small>Processed model output</small></div></div>
+            <div className="metric-card"><span className="metric-icon">⌖</span><div><span>Location</span><strong>Mapped</strong><small>Geo-referenced footprint</small></div></div>
+            <div className="metric-card"><span className="metric-icon">▤</span><div><span>Evidence</span><strong>Available</strong><small>Characterization output</small></div></div>
           </div>
 
           <div className="main-grid">
@@ -151,9 +150,9 @@ function App() {
           </div>
 
           <div className="bottom-grid">
-            <section className="panel compact-panel"><div className="panel-heading"><h3>Recent Detections</h3><button type="button" className="text-button" onClick={openDatasets}>View All</button></div><button type="button" className="detection-row" onClick={openDatasets}><span className="detection-dot" /><div><strong>{selectedScene}</strong><small>Real processed Radar_data scene</small><span>Potential oil spill detected</span></div><b>›</b></button></section>
-            <section className="panel compact-panel"><div className="panel-heading"><h3>System Status</h3></div><div className="status-row"><i /> <div><strong>Model Ready</strong><span>U-Net model pipeline configured</span></div></div><div className="status-row"><i /> <div><strong>Data Pipeline</strong><span>Processed scene outputs available</span></div></div></section>
-            <section className="panel compact-panel"><div className="panel-heading"><h3>Quick Actions</h3></div><button type="button" className="quick-button" onClick={openDatasets}>↥ Analyze New Scene</button><button type="button" className="quick-button" onClick={openDatasets}>▤ View All Reports</button></section>
+            <section className="panel compact-panel"><div className="panel-heading"><h3>Recent Detection</h3><button type="button" className="text-button" onClick={openDatasets}>Open Scene Library</button></div><button type="button" className="detection-row" onClick={openDatasets}><span className="detection-dot" /><div><strong>{selectedScene}</strong><small>Real processed Radar_data scene</small><span>Potential oil spill detected</span></div><b>›</b></button></section>
+            <section className="panel compact-panel"><div className="panel-heading"><h3>System Status</h3></div><div className="status-row"><i /> <div><strong>Model Ready</strong><span>U-Net model pipeline configured</span></div></div><div className="status-row"><i /> <div><strong>Data Pipeline</strong><span>Processed scene output available</span></div></div></section>
+            <section className="panel compact-panel"><div className="panel-heading"><h3>Quick Actions</h3></div><button type="button" className="quick-button" onClick={openDatasets}>↥ Open Scene Library</button><button type="button" className="quick-button" onClick={openDatasets}>▤ Browse Processed Results</button></section>
           </div>
         </main>
       </div>
@@ -161,8 +160,8 @@ function App() {
       {showDatasets && (
         <div className="dataset-overlay" onClick={() => setShowDatasets(false)}>
           <section className="dataset-panel" onClick={(event) => event.stopPropagation()}>
-            <div className="dataset-header"><div><span className="eyebrow">REAL RADAR_DATA INVENTORY</span><h2>Oil-Spill Scene Library</h2><p>{datasetLoading ? "Reading processed scenes…" : `${scenes.length} processed scenes discovered.`}</p></div><button type="button" className="dataset-close" onClick={() => setShowDatasets(false)}>×</button></div>
-            <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>{filteredScenes.length} / {scenes.length} scenes</span></div>
+            <div className="dataset-header"><div><span className="eyebrow">RADAR DATA</span><h2>Scene Library</h2><p>{datasetLoading ? "Reading processed scenes…" : "Select a processed radar scene to begin an investigation."}</p></div><button type="button" className="dataset-close" onClick={() => setShowDatasets(false)}>×</button></div>
+            <div className="dataset-toolbar"><input value={datasetQuery} onChange={(event) => setDatasetQuery(event.target.value)} placeholder="Search scene or filename…" /><span>Select a scene</span></div>
             <div className="dataset-grid">{filteredScenes.map((scene) => { const id = getInvestigationId(scene); return <button type="button" key={`${scene.split}-${scene.scene_id}`} className={`dataset-card ${selectedScene === id ? "selected" : ""}`} onClick={() => selectScene(scene)}><div className="dataset-card-top"><strong>{id}</strong><span>{scene.has_mask ? "REAL + MASK" : "REAL IMAGE"}</span></div><div className="dataset-date">{scene.scene_id}</div><small>{scene.file}</small><small>{scene.split.toUpperCase()} • Sentinel-1A GRD VV</small><em>Open processed investigation →</em></button>; })}</div>
             <footer className="dataset-footer">SOURCE: processed Radar_data • U-Net segmentation, filtering, characterization and GeoJSON outputs.</footer>
           </section>
