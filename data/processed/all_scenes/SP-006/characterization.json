@@ -1,0 +1,64 @@
+{
+  "incident_id": "SP-006",
+  "scene_id": "2018_12_19_b",
+  "split": "train",
+  "source": {
+    "type": "Sentinel-1 SAR",
+    "image": "data\\external\\Radar_data\\train\\images\\2018_12_19_b.tif",
+    "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_12_19_b.tif",
+    "crs": "EPSG:32616"
+  },
+  "detection": {
+    "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+    "spill_pixels": 61110,
+    "area_km2": 6.111,
+    "perimeter_km": 68.91,
+    "compactness": 0.016172,
+    "mean_ai_confidence": 0.946343,
+    "max_ai_confidence": 0.999544,
+    "components": 12,
+    "largest_component_pixels": 14949,
+    "centroid": {
+      "latitude": 28.913945716817437,
+      "longitude": -89.82292382341338
+    },
+    "crs": "EPSG:32616"
+  },
+  "validation": {
+    "ground_truth_available": true,
+    "iou": 0.426625,
+    "dice": 0.59809,
+    "precision": 0.720586,
+    "recall": 0.511191,
+    "predicted_pixels": 61110,
+    "ground_truth_pixels": 86142,
+    "intersection_pixels": 44035,
+    "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+  },
+  "investigation": {
+    "drift": {
+      "status": "PENDING_REAL_HYCOM_FORCING"
+    },
+    "ais": {
+      "status": "PENDING_REAL_AIS_DATA"
+    },
+    "attribution": {
+      "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+    }
+  },
+  "postprocessing": {
+    "raw_pixels": 129764,
+    "filtered_pixels": 61110,
+    "components": 61,
+    "kept_components": 12,
+    "rejected_small": 24,
+    "rejected_large": 0,
+    "rejected_bright": 25,
+    "rejected_shape": 0,
+    "threshold": 0.8,
+    "intensity_threshold": 0.15,
+    "min_component_pixels": 1000,
+    "max_component_pixels": 600000,
+    "min_compactness": 0.005
+  }
+}

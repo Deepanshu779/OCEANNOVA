@@ -1,0 +1,1361 @@
+{
+  "project": "OCEANNOVA",
+  "dataset_root": "data\\external\\Radar_data",
+  "scene_count": 21,
+  "pipeline": [
+    "scene discovery",
+    "Sentinel-1 normalization",
+    "U-Net segmentation",
+    "confidence/component/radiometric/shape filtering",
+    "geometry characterization",
+    "ground-truth validation",
+    "GeoJSON export",
+    "drift and AIS stages explicitly pending real source data"
+  ],
+  "scenes": [
+    {
+      "incident_id": "SP-001",
+      "scene_id": "2018_08_21_",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_08_21_.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_08_21_.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 876585,
+        "area_km2": 87.6585,
+        "perimeter_km": 422.1,
+        "compactness": 0.006183,
+        "mean_ai_confidence": 0.950333,
+        "max_ai_confidence": 0.999712,
+        "components": 54,
+        "largest_component_pixels": 44935,
+        "centroid": {
+          "latitude": 29.067594232483923,
+          "longitude": -88.75003437813322
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.309557,
+        "dice": 0.472765,
+        "precision": 0.376197,
+        "recall": 0.636032,
+        "predicted_pixels": 876585,
+        "ground_truth_pixels": 518479,
+        "intersection_pixels": 329769,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 1611549,
+        "filtered_pixels": 876585,
+        "components": 433,
+        "kept_components": 54,
+        "rejected_small": 243,
+        "rejected_large": 0,
+        "rejected_bright": 136,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-002",
+      "scene_id": "2018_09_14_",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_09_14_.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_09_14_.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 941785,
+        "area_km2": 94.1785,
+        "perimeter_km": 362.04,
+        "compactness": 0.009029,
+        "mean_ai_confidence": 0.962736,
+        "max_ai_confidence": 0.999664,
+        "components": 53,
+        "largest_component_pixels": 63590,
+        "centroid": {
+          "latitude": 29.141992782698697,
+          "longitude": -88.88358645905997
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.115905,
+        "dice": 0.207733,
+        "precision": 0.159153,
+        "recall": 0.298999,
+        "predicted_pixels": 941785,
+        "ground_truth_pixels": 501300,
+        "intersection_pixels": 149888,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 1875138,
+        "filtered_pixels": 941785,
+        "components": 452,
+        "kept_components": 53,
+        "rejected_small": 272,
+        "rejected_large": 0,
+        "rejected_bright": 127,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-003",
+      "scene_id": "2018_12_07",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_12_07.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_12_07.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 122501,
+        "area_km2": 12.2501,
+        "perimeter_km": 87.09,
+        "compactness": 0.020296,
+        "mean_ai_confidence": 0.955248,
+        "max_ai_confidence": 0.999837,
+        "components": 20,
+        "largest_component_pixels": 24585,
+        "centroid": {
+          "latitude": 28.90999523699937,
+          "longitude": -89.03711784959059
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.594274,
+        "dice": 0.745511,
+        "precision": 0.869128,
+        "recall": 0.65268,
+        "predicted_pixels": 122501,
+        "ground_truth_pixels": 163126,
+        "intersection_pixels": 106469,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 547058,
+        "filtered_pixels": 122501,
+        "components": 313,
+        "kept_components": 20,
+        "rejected_small": 201,
+        "rejected_large": 0,
+        "rejected_bright": 92,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-004",
+      "scene_id": "2018_12_07_b",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_12_07_b.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_12_07_b.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 14712,
+        "area_km2": 1.4712,
+        "perimeter_km": 23.75,
+        "compactness": 0.032776,
+        "mean_ai_confidence": 0.927526,
+        "max_ai_confidence": 0.999075,
+        "components": 6,
+        "largest_component_pixels": 5316,
+        "centroid": {
+          "latitude": 28.221441247739158,
+          "longitude": -90.41192672225425
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.116683,
+        "dice": 0.208982,
+        "precision": 0.311243,
+        "recall": 0.1573,
+        "predicted_pixels": 14712,
+        "ground_truth_pixels": 29110,
+        "intersection_pixels": 4579,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 132114,
+        "filtered_pixels": 14712,
+        "components": 221,
+        "kept_components": 6,
+        "rejected_small": 182,
+        "rejected_large": 0,
+        "rejected_bright": 33,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-005",
+      "scene_id": "2018_12_19",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_12_19.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_12_19.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 301258,
+        "area_km2": 30.1258,
+        "perimeter_km": 238.38,
+        "compactness": 0.006662,
+        "mean_ai_confidence": 0.945623,
+        "max_ai_confidence": 0.99977,
+        "components": 53,
+        "largest_component_pixels": 27198,
+        "centroid": {
+          "latitude": 29.408803224538186,
+          "longitude": -89.6928360750536
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.266944,
+        "dice": 0.421398,
+        "precision": 0.354746,
+        "recall": 0.518892,
+        "predicted_pixels": 301258,
+        "ground_truth_pixels": 205958,
+        "intersection_pixels": 106870,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 2403904,
+        "filtered_pixels": 301258,
+        "components": 639,
+        "kept_components": 53,
+        "rejected_small": 340,
+        "rejected_large": 0,
+        "rejected_bright": 246,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-006",
+      "scene_id": "2018_12_19_b",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_12_19_b.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_12_19_b.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 61110,
+        "area_km2": 6.111,
+        "perimeter_km": 68.91,
+        "compactness": 0.016172,
+        "mean_ai_confidence": 0.946343,
+        "max_ai_confidence": 0.999544,
+        "components": 12,
+        "largest_component_pixels": 14949,
+        "centroid": {
+          "latitude": 28.913945716817437,
+          "longitude": -89.82292382341338
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.426625,
+        "dice": 0.59809,
+        "precision": 0.720586,
+        "recall": 0.511191,
+        "predicted_pixels": 61110,
+        "ground_truth_pixels": 86142,
+        "intersection_pixels": 44035,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 129764,
+        "filtered_pixels": 61110,
+        "components": 61,
+        "kept_components": 12,
+        "rejected_small": 24,
+        "rejected_large": 0,
+        "rejected_bright": 25,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-007",
+      "scene_id": "2018_12_31_b",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\2018_12_31_b.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\2018_12_31_b.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 525843,
+        "area_km2": 52.5843,
+        "perimeter_km": 295.63,
+        "compactness": 0.007561,
+        "mean_ai_confidence": 0.953529,
+        "max_ai_confidence": 0.999851,
+        "components": 54,
+        "largest_component_pixels": 41756,
+        "centroid": {
+          "latitude": 28.957642591645403,
+          "longitude": -89.14211686054253
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.463789,
+        "dice": 0.633683,
+        "precision": 0.679165,
+        "recall": 0.59391,
+        "predicted_pixels": 525843,
+        "ground_truth_pixels": 601327,
+        "intersection_pixels": 357134,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 1375074,
+        "filtered_pixels": 525843,
+        "components": 351,
+        "kept_components": 54,
+        "rejected_small": 192,
+        "rejected_large": 0,
+        "rejected_bright": 105,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-008",
+      "scene_id": "20190816",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20190816.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20190816.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 50822,
+        "area_km2": 5.0822,
+        "perimeter_km": 56.55,
+        "compactness": 0.019971,
+        "mean_ai_confidence": 0.96008,
+        "max_ai_confidence": 0.999835,
+        "components": 18,
+        "largest_component_pixels": 11432,
+        "centroid": {
+          "latitude": 28.950113471067375,
+          "longitude": -88.84339097696594
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.478418,
+        "dice": 0.647203,
+        "precision": 0.783381,
+        "recall": 0.551358,
+        "predicted_pixels": 50822,
+        "ground_truth_pixels": 72209,
+        "intersection_pixels": 39813,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 122167,
+        "filtered_pixels": 50822,
+        "components": 89,
+        "kept_components": 18,
+        "rejected_small": 48,
+        "rejected_large": 0,
+        "rejected_bright": 23,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-009",
+      "scene_id": "20190908",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20190908.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20190908.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 77212,
+        "area_km2": 7.7212,
+        "perimeter_km": 88.05,
+        "compactness": 0.012515,
+        "mean_ai_confidence": 0.947208,
+        "max_ai_confidence": 0.999877,
+        "components": 23,
+        "largest_component_pixels": 7532,
+        "centroid": {
+          "latitude": 24.488231868652075,
+          "longitude": -83.52112994933027
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.35688,
+        "dice": 0.52603,
+        "precision": 0.466132,
+        "recall": 0.603592,
+        "predicted_pixels": 77212,
+        "ground_truth_pixels": 59628,
+        "intersection_pixels": 35991,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 174446,
+        "filtered_pixels": 77212,
+        "components": 157,
+        "kept_components": 23,
+        "rejected_small": 105,
+        "rejected_large": 0,
+        "rejected_bright": 29,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-010",
+      "scene_id": "20200224",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20200224.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20200224.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 294712,
+        "area_km2": 29.4712,
+        "perimeter_km": 239.64,
+        "compactness": 0.006449,
+        "mean_ai_confidence": 0.919446,
+        "max_ai_confidence": 0.999417,
+        "components": 41,
+        "largest_component_pixels": 48449,
+        "centroid": {
+          "latitude": 28.895041006658847,
+          "longitude": -88.92484692223957
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.075339,
+        "dice": 0.140121,
+        "precision": 0.110908,
+        "recall": 0.190226,
+        "predicted_pixels": 294712,
+        "ground_truth_pixels": 171827,
+        "intersection_pixels": 32686,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 492118,
+        "filtered_pixels": 294712,
+        "components": 217,
+        "kept_components": 41,
+        "rejected_small": 116,
+        "rejected_large": 0,
+        "rejected_bright": 60,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-011",
+      "scene_id": "20200307",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20200307.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20200307.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 19032,
+        "area_km2": 1.9032,
+        "perimeter_km": 21.71,
+        "compactness": 0.050743,
+        "mean_ai_confidence": 0.948508,
+        "max_ai_confidence": 0.9998,
+        "components": 5,
+        "largest_component_pixels": 8141,
+        "centroid": {
+          "latitude": 28.889188949986245,
+          "longitude": -89.01506180305871
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.373139,
+        "dice": 0.543483,
+        "precision": 0.858501,
+        "recall": 0.397591,
+        "predicted_pixels": 19032,
+        "ground_truth_pixels": 41095,
+        "intersection_pixels": 16339,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 75304,
+        "filtered_pixels": 19032,
+        "components": 45,
+        "kept_components": 5,
+        "rejected_small": 18,
+        "rejected_large": 0,
+        "rejected_bright": 22,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-012",
+      "scene_id": "20200319",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20200319.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20200319.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 11636,
+        "area_km2": 1.1636,
+        "perimeter_km": 18.98,
+        "compactness": 0.04059,
+        "mean_ai_confidence": 0.939265,
+        "max_ai_confidence": 0.999464,
+        "components": 3,
+        "largest_component_pixels": 4662,
+        "centroid": {
+          "latitude": 29.60019989718404,
+          "longitude": -89.13634026785357
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.699627,
+        "dice": 0.823271,
+        "precision": 0.902974,
+        "recall": 0.756498,
+        "predicted_pixels": 11636,
+        "ground_truth_pixels": 13889,
+        "intersection_pixels": 10507,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 49714,
+        "filtered_pixels": 11636,
+        "components": 34,
+        "kept_components": 3,
+        "rejected_small": 17,
+        "rejected_large": 0,
+        "rejected_bright": 14,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-013",
+      "scene_id": "20200331",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20200331.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20200331.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 145538,
+        "area_km2": 14.5538,
+        "perimeter_km": 128.81,
+        "compactness": 0.011023,
+        "mean_ai_confidence": 0.942456,
+        "max_ai_confidence": 0.999869,
+        "components": 34,
+        "largest_component_pixels": 24587,
+        "centroid": {
+          "latitude": 29.025281540478304,
+          "longitude": -89.06425196631568
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.096449,
+        "dice": 0.17593,
+        "precision": 0.101307,
+        "recall": 0.667935,
+        "predicted_pixels": 145538,
+        "ground_truth_pixels": 22074,
+        "intersection_pixels": 14744,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 522023,
+        "filtered_pixels": 145538,
+        "components": 180,
+        "kept_components": 34,
+        "rejected_small": 101,
+        "rejected_large": 0,
+        "rejected_bright": 45,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-014",
+      "scene_id": "20200822",
+      "split": "train",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\train\\images\\20200822.tif",
+        "ground_truth": "data\\external\\Radar_data\\train\\masks\\20200822.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 8870,
+        "area_km2": 0.887,
+        "perimeter_km": 13.29,
+        "compactness": 0.063108,
+        "mean_ai_confidence": 0.945385,
+        "max_ai_confidence": 0.998913,
+        "components": 5,
+        "largest_component_pixels": 3407,
+        "centroid": {
+          "latitude": 29.035829933438833,
+          "longitude": -88.98722900204899
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.348573,
+        "dice": 0.516951,
+        "precision": 0.720293,
+        "recall": 0.403142,
+        "predicted_pixels": 8870,
+        "ground_truth_pixels": 15848,
+        "intersection_pixels": 6389,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 63876,
+        "filtered_pixels": 8870,
+        "components": 58,
+        "kept_components": 5,
+        "rejected_small": 33,
+        "rejected_large": 0,
+        "rejected_bright": 20,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-015",
+      "scene_id": "2018_09_26",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\2018_09_26.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\2018_09_26.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 270378,
+        "area_km2": 27.0378,
+        "perimeter_km": 110.53,
+        "compactness": 0.027811,
+        "mean_ai_confidence": 0.959369,
+        "max_ai_confidence": 0.99933,
+        "components": 16,
+        "largest_component_pixels": 40800,
+        "centroid": {
+          "latitude": 28.906728514527977,
+          "longitude": -89.01991595626981
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.571118,
+        "dice": 0.727021,
+        "precision": 0.93491,
+        "recall": 0.594767,
+        "predicted_pixels": 270378,
+        "ground_truth_pixels": 425005,
+        "intersection_pixels": 252779,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 917150,
+        "filtered_pixels": 270378,
+        "components": 210,
+        "kept_components": 16,
+        "rejected_small": 119,
+        "rejected_large": 0,
+        "rejected_bright": 75,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-016",
+      "scene_id": "2018_12_19_d",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\2018_12_19_d.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\2018_12_19_d.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 112236,
+        "area_km2": 11.2236,
+        "perimeter_km": 91.65,
+        "compactness": 0.016791,
+        "mean_ai_confidence": 0.939227,
+        "max_ai_confidence": 0.999542,
+        "components": 15,
+        "largest_component_pixels": 14391,
+        "centroid": {
+          "latitude": 29.27273319966144,
+          "longitude": -89.08497087123204
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.34123,
+        "dice": 0.508831,
+        "precision": 0.38926,
+        "recall": 0.734429,
+        "predicted_pixels": 112236,
+        "ground_truth_pixels": 59487,
+        "intersection_pixels": 43689,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 520114,
+        "filtered_pixels": 112236,
+        "components": 139,
+        "kept_components": 15,
+        "rejected_small": 73,
+        "rejected_large": 0,
+        "rejected_bright": 51,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-017",
+      "scene_id": "2018_12_19_e",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\2018_12_19_e.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\2018_12_19_e.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 46340,
+        "area_km2": 4.634,
+        "perimeter_km": 42.93,
+        "compactness": 0.031597,
+        "mean_ai_confidence": 0.955658,
+        "max_ai_confidence": 0.999832,
+        "components": 11,
+        "largest_component_pixels": 15922,
+        "centroid": {
+          "latitude": 29.206630498586733,
+          "longitude": -88.74444498952424
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.437701,
+        "dice": 0.60889,
+        "precision": 0.576435,
+        "recall": 0.645217,
+        "predicted_pixels": 46340,
+        "ground_truth_pixels": 41400,
+        "intersection_pixels": 26712,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 179318,
+        "filtered_pixels": 46340,
+        "components": 116,
+        "kept_components": 11,
+        "rejected_small": 74,
+        "rejected_large": 0,
+        "rejected_bright": 31,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-018",
+      "scene_id": "2018_12_19_f_",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\2018_12_19_f_.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\2018_12_19_f_.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 503813,
+        "area_km2": 50.3813,
+        "perimeter_km": 211.62,
+        "compactness": 0.014137,
+        "mean_ai_confidence": 0.949128,
+        "max_ai_confidence": 0.999279,
+        "components": 32,
+        "largest_component_pixels": 60789,
+        "centroid": {
+          "latitude": 29.060935456466254,
+          "longitude": -88.94834267785875
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.131146,
+        "dice": 0.231881,
+        "precision": 0.253142,
+        "recall": 0.213915,
+        "predicted_pixels": 503813,
+        "ground_truth_pixels": 596199,
+        "intersection_pixels": 127536,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 1589146,
+        "filtered_pixels": 503813,
+        "components": 220,
+        "kept_components": 32,
+        "rejected_small": 114,
+        "rejected_large": 0,
+        "rejected_bright": 74,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-019",
+      "scene_id": "20191015",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\20191015.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\20191015.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 281381,
+        "area_km2": 28.1381,
+        "perimeter_km": 202.3,
+        "compactness": 0.00864,
+        "mean_ai_confidence": 0.943617,
+        "max_ai_confidence": 0.999228,
+        "components": 30,
+        "largest_component_pixels": 26473,
+        "centroid": {
+          "latitude": 28.8668848843775,
+          "longitude": -89.19772582349665
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.237293,
+        "dice": 0.383568,
+        "precision": 0.492606,
+        "recall": 0.314052,
+        "predicted_pixels": 281381,
+        "ground_truth_pixels": 441360,
+        "intersection_pixels": 138610,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 627424,
+        "filtered_pixels": 281381,
+        "components": 260,
+        "kept_components": 30,
+        "rejected_small": 164,
+        "rejected_large": 0,
+        "rejected_bright": 66,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-020",
+      "scene_id": "20200224_b",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\20200224_b.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\20200224_b.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 15908,
+        "area_km2": 1.5908,
+        "perimeter_km": 19.23,
+        "compactness": 0.054059,
+        "mean_ai_confidence": 0.936229,
+        "max_ai_confidence": 0.999899,
+        "components": 3,
+        "largest_component_pixels": 8103,
+        "centroid": {
+          "latitude": 28.778403811362928,
+          "longitude": -89.93760995189754
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.272684,
+        "dice": 0.428517,
+        "precision": 0.819148,
+        "recall": 0.290152,
+        "predicted_pixels": 15908,
+        "ground_truth_pixels": 44911,
+        "intersection_pixels": 13031,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 64526,
+        "filtered_pixels": 15908,
+        "components": 28,
+        "kept_components": 3,
+        "rejected_small": 8,
+        "rejected_large": 0,
+        "rejected_bright": 17,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    },
+    {
+      "incident_id": "SP-021",
+      "scene_id": "20200319b",
+      "split": "test",
+      "source": {
+        "type": "Sentinel-1 SAR",
+        "image": "data\\external\\Radar_data\\test\\images\\20200319b.tif",
+        "ground_truth": "data\\external\\Radar_data\\test\\masks\\20200319b.tif",
+        "crs": "EPSG:32616"
+      },
+      "detection": {
+        "method": "Lightweight U-Net + prototype radiometric/look-alike filtering",
+        "spill_pixels": 18446,
+        "area_km2": 1.8446,
+        "perimeter_km": 20.19,
+        "compactness": 0.056864,
+        "mean_ai_confidence": 0.956415,
+        "max_ai_confidence": 0.999814,
+        "components": 4,
+        "largest_component_pixels": 6551,
+        "centroid": {
+          "latitude": 28.972140198413705,
+          "longitude": -88.98157402337873
+        },
+        "crs": "EPSG:32616"
+      },
+      "validation": {
+        "ground_truth_available": true,
+        "iou": 0.436056,
+        "dice": 0.607297,
+        "precision": 0.941234,
+        "recall": 0.44826,
+        "predicted_pixels": 18446,
+        "ground_truth_pixels": 38732,
+        "intersection_pixels": 17362,
+        "metric_note": "Reference-mask evaluation; train split metrics are in-sample and must not be reported as held-out performance."
+      },
+      "investigation": {
+        "drift": {
+          "status": "PENDING_REAL_HYCOM_FORCING"
+        },
+        "ais": {
+          "status": "PENDING_REAL_AIS_DATA"
+        },
+        "attribution": {
+          "status": "NOT_COMPUTED_WITHOUT_REAL_AIS"
+        }
+      },
+      "postprocessing": {
+        "raw_pixels": 210000,
+        "filtered_pixels": 18446,
+        "components": 69,
+        "kept_components": 4,
+        "rejected_small": 53,
+        "rejected_large": 0,
+        "rejected_bright": 12,
+        "rejected_shape": 0,
+        "threshold": 0.8,
+        "intensity_threshold": 0.15,
+        "min_component_pixels": 1000,
+        "max_component_pixels": 600000,
+        "min_compactness": 0.005
+      }
+    }
+  ]
+}
