@@ -5,12 +5,7 @@ const GITHUB_DATA_ROOT = "https://raw.githubusercontent.com/Deepanshu779/OCEANNO
 const GITHUB_MANIFEST_URL = `${GITHUB_DATA_ROOT}/manifest.json`;
 const configuredApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
 
-// Production uses Render first. If Render is asleep, unavailable, or missing
-// repository-level data, the committed processed Radar_data artifacts remain
-// available directly from the public repository as a deterministic fallback.
-const API_BASE_URL = import.meta.env.PROD
-  ? PRODUCTION_API
-  : (configuredApi || "http://127.0.0.1:8000/api/v1");
+const API_BASE_URL = import.meta.env.PROD ? PRODUCTION_API : (configuredApi || "http://127.0.0.1:8000/api/v1");
 
 export interface Coordinates { lat: number; lon: number; }
 export interface Origin { latitude: number; longitude: number; uncertainty_km: number; method?: string | null; }
@@ -22,6 +17,7 @@ export interface TrafficSummary { total_vessels_considered: number; filtered_irr
 export interface Investigation { spill_id: string; confidence: number; area_km2: number; centroid: Coordinates; characterization: SpillCharacterization; origin?: Origin | null; drift: DriftPoint[]; traffic: TrafficSummary; vessels: Vessel[]; vessel_tracks: VesselTrackPoint[]; }
 
 export interface DatasetScene {
+  incident_id?: string | null;
   scene_id: string;
   file: string;
   split: "train" | "test";
@@ -31,17 +27,13 @@ export interface DatasetScene {
 }
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { Accept: "application/json" },
-  });
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`OCEANNOVA API ${response.status}: ${path}`);
   return (await response.json()) as T;
 }
 
 async function githubJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, {
-    headers: { Accept: "application/json" },
-  });
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`Committed Radar_data artifact ${response.status}`);
   return (await response.json()) as T;
 }
@@ -50,66 +42,41 @@ async function committedInvestigation(spillId: string): Promise<Investigation> {
   const data = await githubJson<any>(`${GITHUB_DATA_ROOT}/${encodeURIComponent(spillId)}/characterization.json`);
   const detection = data.detection ?? {};
   const centroid = data.centroid ?? detection.centroid ?? {};
-  if (typeof centroid.latitude !== "number" || typeof centroid.longitude !== "number") {
-    throw new Error(`Committed result ${spillId} has no centroid`);
-  }
-
+  if (typeof centroid.latitude !== "number" || typeof centroid.longitude !== "number") throw new Error(`Committed result ${spillId} has no centroid`);
   return {
     spill_id: data.incident_id ?? spillId,
-    confidence: Number(detection.mean_ai_confidence ?? 0),
-    area_km2: Number(detection.area_km2 ?? 0),
+    confidence: Number(detection.mean_ai_confidence ?? 0), area_km2: Number(detection.area_km2 ?? 0),
     centroid: { lat: Number(centroid.latitude), lon: Number(centroid.longitude) },
-    characterization: {
-      area_km2: Number(detection.area_km2 ?? 0),
-      perimeter_estimate_km: detection.perimeter_km ?? null,
-      compactness_estimate: detection.compactness ?? null,
-      estimated_age_hours: null,
-      age_status: "not_available_from_single_radar_scene",
-    },
-    origin: null,
-    drift: [],
-    traffic: {
-      total_vessels_considered: 0,
-      filtered_irrelevant: 0,
-      ranked_candidates: 0,
-      filtering_rule: "Historical AIS not loaded",
-    },
-    vessels: [],
-    vessel_tracks: [],
+    characterization: { area_km2: Number(detection.area_km2 ?? 0), perimeter_estimate_km: detection.perimeter_km ?? null, compactness_estimate: detection.compactness ?? null, estimated_age_hours: null, age_status: "not_available_from_single_radar_scene" },
+    origin: null, drift: [],
+    traffic: { total_vessels_considered: 0, filtered_irrelevant: 0, ranked_candidates: 0, filtering_rule: "Historical AIS not loaded" },
+    vessels: [], vessel_tracks: [],
   };
 }
 
 export async function getInvestigation(spillId: string): Promise<Investigation> {
-  try {
-    return await request<Investigation>(`/radar/spills/${encodeURIComponent(spillId)}/investigation`);
-  } catch (error) {
-    console.warn(`OCEANNOVA API unavailable for ${spillId}; loading committed Radar_data result.`, error);
-    return committedInvestigation(spillId);
-  }
+  try { return await request<Investigation>(`/radar/spills/${encodeURIComponent(spillId)}/investigation`); }
+  catch (error) { console.warn(`OCEANNOVA API unavailable for ${spillId}; loading committed Radar_data result.`, error); return committedInvestigation(spillId); }
 }
 
 export async function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
-  try {
-    return await request<GeoJsonObject>(`/radar/spills/${encodeURIComponent(spillId)}/geojson`);
-  } catch (error) {
-    console.warn(`OCEANNOVA API unavailable for ${spillId}; loading committed GeoJSON.`, error);
-    return githubJson<GeoJsonObject>(`${GITHUB_DATA_ROOT}/${encodeURIComponent(spillId)}/spill.geojson`);
-  }
+  try { return await request<GeoJsonObject>(`/radar/spills/${encodeURIComponent(spillId)}/geojson`); }
+  catch (error) { console.warn(`OCEANNOVA API unavailable for ${spillId}; loading committed GeoJSON.`, error); return githubJson<GeoJsonObject>(`${GITHUB_DATA_ROOT}/${encodeURIComponent(spillId)}/spill.geojson`); }
 }
 
 export async function getDatasetScenes(): Promise<DatasetScene[]> {
   try {
     const data = await request<{ scenes: DatasetScene[] }>("/datasets");
-    return data.scenes;
+    if (data.scenes?.length) return data.scenes;
+    throw new Error("Dataset API returned no scenes");
   } catch (error) {
     console.warn("OCEANNOVA dataset API unavailable; loading committed Radar_data manifest.", error);
     const manifest = await githubJson<any>(GITHUB_MANIFEST_URL);
     return (manifest.scenes ?? []).map((item: any) => ({
+      incident_id: item.incident_id ?? null,
       scene_id: item.scene_id,
       file: String(item.source?.image ?? "").split(/[\\/]/).pop() ?? "",
-      split: item.split,
-      has_image: true,
-      has_mask: Boolean(item.source?.ground_truth),
+      split: item.split, has_image: true, has_mask: Boolean(item.source?.ground_truth),
       image_path: String(item.source?.image ?? "").replaceAll("\\", "/"),
     }));
   }
