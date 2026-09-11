@@ -1,10 +1,13 @@
 import type { GeoJsonObject } from "geojson";
 
 const PRODUCTION_API = "https://oceannova-api.onrender.com/api/v1";
+const GITHUB_DATA_ROOT = "https://raw.githubusercontent.com/Deepanshu779/OCEANNOVA/main/data/processed/all_scenes";
+const GITHUB_MANIFEST_URL = `${GITHUB_DATA_ROOT}/manifest.json`;
 const configuredApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
 
-// A deployed Vercel build must never fall back to localhost or an accidentally
-// stale environment variable. Local development can still override the API.
+// Production uses Render first. If Render is asleep, unavailable, or missing
+// repository-level data, the committed processed Radar_data artifacts remain
+// available directly from the public repository as a deterministic fallback.
 const API_BASE_URL = import.meta.env.PROD
   ? PRODUCTION_API
   : (configuredApi || "http://127.0.0.1:8000/api/v1");
@@ -27,34 +30,6 @@ export interface DatasetScene {
   image_path: string;
 }
 
-// Production-safe fallback for the first processed Radar_data scene. This is
-// derived from the committed processed characterization, so the deployed UI
-// remains usable during a Render cold start or transient API outage. It does
-// not invent AIS, drift, age, or origin evidence.
-const LOCAL_FALLBACK_INVESTIGATION: Investigation = {
-  spill_id: "SP-001",
-  confidence: 0.950333,
-  area_km2: 87.6585,
-  centroid: { lat: 29.067594232483923, lon: -88.75003437813322 },
-  characterization: {
-    area_km2: 87.6585,
-    perimeter_estimate_km: 422.1,
-    compactness_estimate: 0.006183,
-    estimated_age_hours: null,
-    age_status: "not_available_from_single_radar_scene",
-  },
-  origin: null,
-  drift: [],
-  traffic: {
-    total_vessels_considered: 0,
-    filtered_irrelevant: 0,
-    ranked_candidates: 0,
-    filtering_rule: "Historical AIS not loaded",
-  },
-  vessels: [],
-  vessel_tracks: [],
-};
-
 async function request<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: { Accept: "application/json" },
@@ -63,17 +38,53 @@ async function request<T>(path: string): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function githubJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(`Committed Radar_data artifact ${response.status}`);
+  return (await response.json()) as T;
+}
+
+async function committedInvestigation(spillId: string): Promise<Investigation> {
+  const data = await githubJson<any>(`${GITHUB_DATA_ROOT}/${encodeURIComponent(spillId)}/characterization.json`);
+  const detection = data.detection ?? {};
+  const centroid = data.centroid ?? detection.centroid ?? {};
+  if (typeof centroid.latitude !== "number" || typeof centroid.longitude !== "number") {
+    throw new Error(`Committed result ${spillId} has no centroid`);
+  }
+
+  return {
+    spill_id: data.incident_id ?? spillId,
+    confidence: Number(detection.mean_ai_confidence ?? 0),
+    area_km2: Number(detection.area_km2 ?? 0),
+    centroid: { lat: Number(centroid.latitude), lon: Number(centroid.longitude) },
+    characterization: {
+      area_km2: Number(detection.area_km2 ?? 0),
+      perimeter_estimate_km: detection.perimeter_km ?? null,
+      compactness_estimate: detection.compactness ?? null,
+      estimated_age_hours: null,
+      age_status: "not_available_from_single_radar_scene",
+    },
+    origin: null,
+    drift: [],
+    traffic: {
+      total_vessels_considered: 0,
+      filtered_irrelevant: 0,
+      ranked_candidates: 0,
+      filtering_rule: "Historical AIS not loaded",
+    },
+    vessels: [],
+    vessel_tracks: [],
+  };
+}
+
 export async function getInvestigation(spillId: string): Promise<Investigation> {
   try {
     return await request<Investigation>(`/radar/spills/${encodeURIComponent(spillId)}/investigation`);
   } catch (error) {
-    // Keep the deployed dashboard usable if Render is sleeping or temporarily
-    // unavailable. Only SP-001 has a committed local processed characterization.
-    if (spillId === LOCAL_FALLBACK_INVESTIGATION.spill_id) {
-      console.warn("OCEANNOVA API unavailable; using committed Radar_data fallback.", error);
-      return LOCAL_FALLBACK_INVESTIGATION;
-    }
-    throw error;
+    console.warn(`OCEANNOVA API unavailable for ${spillId}; loading committed Radar_data result.`, error);
+    return committedInvestigation(spillId);
   }
 }
 
@@ -81,17 +92,25 @@ export async function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
   try {
     return await request<GeoJsonObject>(`/radar/spills/${encodeURIComponent(spillId)}/geojson`);
   } catch (error) {
-    // The real processed footprint is also committed to the Vercel static build.
-    const localResponse = await fetch(`/data/${encodeURIComponent(spillId)}_spill.geojson`, {
-      headers: { Accept: "application/geo+json,application/json" },
-    });
-    if (!localResponse.ok) throw error;
-    console.warn("OCEANNOVA API unavailable; using committed GeoJSON footprint.", error);
-    return (await localResponse.json()) as GeoJsonObject;
+    console.warn(`OCEANNOVA API unavailable for ${spillId}; loading committed GeoJSON.`, error);
+    return githubJson<GeoJsonObject>(`${GITHUB_DATA_ROOT}/${encodeURIComponent(spillId)}/spill.geojson`);
   }
 }
 
 export async function getDatasetScenes(): Promise<DatasetScene[]> {
-  const data = await request<{ scenes: DatasetScene[] }>("/datasets");
-  return data.scenes;
+  try {
+    const data = await request<{ scenes: DatasetScene[] }>("/datasets");
+    return data.scenes;
+  } catch (error) {
+    console.warn("OCEANNOVA dataset API unavailable; loading committed Radar_data manifest.", error);
+    const manifest = await githubJson<any>(GITHUB_MANIFEST_URL);
+    return (manifest.scenes ?? []).map((item: any) => ({
+      scene_id: item.scene_id,
+      file: String(item.source?.image ?? "").split(/[\\/]/).pop() ?? "",
+      split: item.split,
+      has_image: true,
+      has_mask: Boolean(item.source?.ground_truth),
+      image_path: String(item.source?.image ?? "").replaceAll("\\", "/"),
+    }));
+  }
 }
