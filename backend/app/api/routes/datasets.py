@@ -29,6 +29,7 @@ def discover_scenes() -> list[dict]:
                 "image_path": str(image_path.relative_to(PROJECT_ROOT)).replace("\\", "/"),
             })
     if scenes:
+        # Keep API order deterministic; the frontend uses incident_id when available.
         return scenes
 
     if MANIFEST_PATH.exists():
@@ -36,6 +37,7 @@ def discover_scenes() -> list[dict]:
             manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
             return [
                 {
+                    "incident_id": item.get("incident_id"),
                     "scene_id": item["scene_id"],
                     "file": Path(item["source"]["image"]).name,
                     "split": item["split"],
