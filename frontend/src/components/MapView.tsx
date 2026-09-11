@@ -29,7 +29,14 @@ L.Icon.Default.mergeOptions({
 
 const spillIcon = L.divIcon({ className: "spill-marker", html: `<div class="spill-marker-inner"></div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
 const originIcon = L.divIcon({ className: "origin-marker", html: `<div class="origin-marker-inner"></div>`, iconSize: [28, 28], iconAnchor: [14, 14] });
-const selectedVesselIcon = L.divIcon({ className: "selected-vessel-marker", html: `<div class="selected-vessel-inner">🚢</div>`, iconSize: [42, 42], iconAnchor: [21, 21] });
+
+const vesselIcon = L.divIcon({
+  className: "vessel-ship-marker",
+  html: `<div class="vessel-ship-icon" aria-label="Vessel">🚢</div>`,
+  iconSize: [40, 40],
+  iconAnchor: [20, 20],
+  popupAnchor: [0, -18],
+});
 
 function IncidentOverview({ investigation }: { investigation: Investigation }) {
   const map = useMap();
@@ -51,9 +58,30 @@ function FocusInvestigationButton({ investigation }: { investigation: Investigat
     const points: [number, number][] = [[investigation.centroid.lat, investigation.centroid.lon]];
     if (investigation.origin) points.push([investigation.origin.latitude, investigation.origin.longitude]);
     investigation.drift.forEach((p) => points.push([p.latitude, p.longitude]));
+    investigation.vessels.forEach((v) => {
+      if (v.latitude != null && v.longitude != null) points.push([v.latitude, v.longitude]);
+    });
     map.fitBounds(L.latLngBounds(points), { padding: [60, 60], maxZoom: 10, animate: true });
   };
   return <button type="button" className="map-action-button" onClick={focusInvestigation}>Focus Investigation</button>;
+}
+
+function vesselPopup(vessel: Vessel) {
+  const score = vessel.attribution_score.toFixed(1);
+  const distance = vessel.distance_km == null ? "—" : `${vessel.distance_km.toFixed(2)} km`;
+  const time = vessel.time_difference_hours == null ? "—" : `${vessel.time_difference_hours >= 0 ? "+" : ""}${vessel.time_difference_hours.toFixed(1)} h`;
+  return (
+    <>
+      <strong>{vessel.vessel_name ?? vessel.mmsi}</strong><br />
+      MMSI: {vessel.mmsi}<br />
+      Attribution score: {score}%<br />
+      Distance to origin: {distance}<br />
+      Time difference: {time}<br />
+      Speed: {vessel.speed_knots == null ? "—" : `${vessel.speed_knots.toFixed(1)} kn`}<br />
+      Course: {vessel.course == null ? "—" : `${vessel.course.toFixed(0)}°`}<br />
+      <span>{vessel.relevance === "filtered" ? "Filtered traffic" : "Representative candidate"}</span>
+    </>
+  );
 }
 
 export default function MapView({ investigation }: MapViewProps) {
@@ -106,6 +134,7 @@ export default function MapView({ investigation }: MapViewProps) {
         <div><span className="legend-footprint" /> Real processed spill footprint</div>
         <div><span className="legend-dot legend-origin" /> Origin analysis when available</div>
         <div><span className="legend-line" /> Drift when available</div>
+        <div><span className="legend-vessel-icon">🚢</span> Vessel candidate</div>
       </div>
       <div className="map-status-card">
         <strong>● RADAR INVESTIGATION ACTIVE</strong>
@@ -134,8 +163,8 @@ export default function MapView({ investigation }: MapViewProps) {
       {investigation.vessels.map((vessel) => {
         if (vessel.latitude == null || vessel.longitude == null) return null;
         return (
-          <Marker key={vessel.mmsi} position={[vessel.latitude, vessel.longitude]} icon={selectedVesselIcon}>
-            <Popup><strong>{vessel.vessel_name ?? vessel.mmsi}</strong><br />AIS candidate data</Popup>
+          <Marker key={vessel.mmsi} position={[vessel.latitude, vessel.longitude]} icon={vesselIcon}>
+            <Popup>{vesselPopup(vessel)}</Popup>
           </Marker>
         );
       })}
