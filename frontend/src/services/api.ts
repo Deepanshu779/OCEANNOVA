@@ -1,8 +1,10 @@
 import type { GeoJsonObject } from "geojson";
 
+// Production is the safe default so the deployed Vercel build does not silently
+// fall back to localhost when VITE_API_BASE_URL is missing from the build environment.
 const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  "http://127.0.0.1:8000/api/v1";
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ||
+  "https://oceannova-api.onrender.com/api/v1";
 
 export interface Coordinates { lat: number; lon: number; }
 export interface Origin { latitude: number; longitude: number; uncertainty_km: number; method?: string | null; }
@@ -22,21 +24,21 @@ export interface DatasetScene {
   image_path: string;
 }
 
-export async function getInvestigation(spillId: string): Promise<Investigation> {
-  const response = await fetch(`${API_BASE_URL}/radar/spills/${encodeURIComponent(spillId)}/investigation`);
-  if (!response.ok) throw new Error(`Failed to fetch Radar_data investigation: ${response.status}`);
-  return (await response.json()) as Investigation;
+async function request<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`);
+  if (!response.ok) throw new Error(`OCEANNOVA API ${response.status}: ${path}`);
+  return (await response.json()) as T;
 }
 
-export async function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
-  const response = await fetch(`${API_BASE_URL}/radar/spills/${encodeURIComponent(spillId)}/geojson`);
-  if (!response.ok) throw new Error(`Failed to fetch Radar_data GeoJSON: ${response.status}`);
-  return (await response.json()) as GeoJsonObject;
+export function getInvestigation(spillId: string): Promise<Investigation> {
+  return request<Investigation>(`/radar/spills/${encodeURIComponent(spillId)}/investigation`);
+}
+
+export function getSpillGeoJSON(spillId: string): Promise<GeoJsonObject> {
+  return request<GeoJsonObject>(`/radar/spills/${encodeURIComponent(spillId)}/geojson`);
 }
 
 export async function getDatasetScenes(): Promise<DatasetScene[]> {
-  const response = await fetch(`${API_BASE_URL}/datasets`);
-  if (!response.ok) throw new Error(`Failed to fetch dataset inventory: ${response.status}`);
-  const data = await response.json() as { scenes: DatasetScene[] };
+  const data = await request<{ scenes: DatasetScene[] }>("/datasets");
   return data.scenes;
 }
