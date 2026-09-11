@@ -1,10 +1,13 @@
 import type { GeoJsonObject } from "geojson";
 
-// Production is the safe default so the deployed Vercel build does not silently
-// fall back to localhost when VITE_API_BASE_URL is missing from the build environment.
-const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ||
-  "https://oceannova-api.onrender.com/api/v1";
+const PRODUCTION_API = "https://oceannova-api.onrender.com/api/v1";
+const configuredApi = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "");
+
+// A deployed Vercel build must never fall back to localhost or an accidentally
+// stale environment variable. Local development can still override the API.
+const API_BASE_URL = import.meta.env.PROD
+  ? PRODUCTION_API
+  : (configuredApi || "http://127.0.0.1:8000/api/v1");
 
 export interface Coordinates { lat: number; lon: number; }
 export interface Origin { latitude: number; longitude: number; uncertainty_km: number; method?: string | null; }
@@ -25,7 +28,9 @@ export interface DatasetScene {
 }
 
 async function request<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: { Accept: "application/json" },
+  });
   if (!response.ok) throw new Error(`OCEANNOVA API ${response.status}: ${path}`);
   return (await response.json()) as T;
 }
